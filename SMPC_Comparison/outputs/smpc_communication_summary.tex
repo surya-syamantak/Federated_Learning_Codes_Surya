@@ -1,0 +1,14 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{SMPC communication per client and round: v14 vs v15.}
+\label{tab:smpc_comm}
+\begin{tabular}{lrrrrrrrrrrrr}
+\toprule
+scheme & bytes\_up\_per\_client\_round & bytes\_down\_per\_client\_round & messages\_sent\_per\_client\_round & messages\_received\_per\_client\_round & client\_to\_client\_messages\_per\_round & round\_trips\_per\_round & comm\_ms\_per\_client\_round & one\_time\_setup\_bytes\_up & one\_time\_setup\_bytes\_down & one\_time\_setup\_comm\_ms & server\_bytes\_received\_per\_round & smpc\_bytes\_total\_run \\
+\midrule
+v14 & 384 & 288 & 4 & 3 & 12 & 2 & 100.2 & 0 & 0 & 0 & 384 & 18,816 \\
+v15 & 48 & 0 & 1 & 0 & 0 & 1 & 50.02 & 256 & 768 & 50.23 & 192 & 5,440 \\
+\bottomrule
+\end{tabular}
+\end{table*}

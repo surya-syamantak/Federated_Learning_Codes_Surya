@@ -1,0 +1,47 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{Validation metrics of the global model of the last round: FedRF-Diff v12 vs Federated-Learning.}
+\label{tab:v12_fl_metrics_last_round}
+\begin{tabular}{llrrr}
+\toprule
+Entity & Metric & v12 & FL & FL - v12 \\
+\midrule
+Client 1(Hungary) & Accuracy & 0.868 & 0.983 & 0.115 \\
+Client 1(Hungary) & Precision & 0.739 & 0.955 & 0.215 \\
+Client 1(Hungary) & Recall & 0.944 & 1.000 & 0.056 \\
+Client 1(Hungary) & Specificity & 0.829 & 0.974 & 0.145 \\
+Client 1(Hungary) & F1 Score & 0.829 & 0.977 & 0.147 \\
+Client 1(Hungary) & MCC & 0.739 & 0.964 & 0.225 \\
+Client 1(Hungary) & Cohen's Kappa & 0.724 & 0.963 & 0.239 \\
+Client 2(Switzerland) & Accuracy & 0.955 & 0.800 & -0.155 \\
+Client 2(Switzerland) & Precision & 1.000 & 0.909 & -0.091 \\
+Client 2(Switzerland) & Recall & 0.952 & 0.870 & -0.083 \\
+Client 2(Switzerland) & Specificity & 1.000 & 0.000 & -1.000 \\
+Client 2(Switzerland) & F1 Score & 0.976 & 0.889 & -0.087 \\
+Client 2(Switzerland) & MCC & 0.690 & -0.109 & -0.799 \\
+Client 2(Switzerland) & Cohen's Kappa & 0.645 & -0.106 & -0.751 \\
+Client 3(VA Long Beach) & Accuracy & 0.889 & 0.900 & 0.011 \\
+Client 3(VA Long Beach) & Precision & 0.926 & 0.882 & -0.044 \\
+Client 3(VA Long Beach) & Recall & 0.926 & 1.000 & 0.074 \\
+Client 3(VA Long Beach) & Specificity & 0.778 & 0.600 & -0.178 \\
+Client 3(VA Long Beach) & F1 Score & 0.926 & 0.938 & 0.012 \\
+Client 3(VA Long Beach) & MCC & 0.704 & 0.728 & 0.024 \\
+Client 3(VA Long Beach) & Cohen's Kappa & 0.704 & 0.692 & -0.011 \\
+Client 4(Cleveland) & Accuracy & 0.796 & 0.672 & -0.124 \\
+Client 4(Cleveland) & Precision & 0.846 & 0.611 & -0.235 \\
+Client 4(Cleveland) & Recall & 0.688 & 0.786 & 0.098 \\
+Client 4(Cleveland) & Specificity & 0.891 & 0.576 & -0.315 \\
+Client 4(Cleveland) & F1 Score & 0.759 & 0.688 & -0.071 \\
+Client 4(Cleveland) & MCC & 0.595 & 0.366 & -0.229 \\
+Client 4(Cleveland) & Cohen's Kappa & 0.585 & 0.354 & -0.232 \\
+Global Server & Accuracy & 0.846 & 0.838 & -0.008 \\
+Global Server & Precision & 0.872 & 0.816 & -0.056 \\
+Global Server & Recall & 0.833 & 0.912 & 0.078 \\
+Global Server & Specificity & 0.860 & 0.747 & -0.113 \\
+Global Server & F1 Score & 0.852 & 0.861 & 0.009 \\
+Global Server & MCC & 0.692 & 0.674 & -0.018 \\
+Global Server & Cohen's Kappa & 0.691 & 0.668 & -0.023 \\
+\bottomrule
+\end{tabular}
+\end{table*}

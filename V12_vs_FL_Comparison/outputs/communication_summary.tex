@@ -1,0 +1,22 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{Communication per round of FedRF-Diff v12 and Federated-Learning, per client and Global Server, averaged over 30 rounds.}
+\label{tab:v12_fl_comm}
+\begin{tabular}{llrrrr}
+\toprule
+Project & Entity & Sent mean (KB) & Received mean (KB) & Time mean (ms) & Data over the run (MB) \\
+\midrule
+v12 & Client 1(Hungary) & 10.446 & 457.342 & 279.210 & 13.705 \\
+v12 & Client 2(Switzerland) & 6.547 & 457.224 & 277.593 & 13.587 \\
+v12 & Client 3(VA Long Beach) & 8.223 & 457.275 & 278.288 & 13.638 \\
+v12 & Client 4(Cleveland) & 16.892 & 457.538 & 281.882 & 13.899 \\
+v12 & Global Server & 1,829 & 42.107 & 281.882 & 54.829 \\
+FL & Client 1(Hungary) & 76.912 & 180.113 & 211.013 & 7.530 \\
+FL & Client 2(Switzerland) & 66.168 & 180.113 & 206.612 & 7.215 \\
+FL & Client 3(VA Long Beach) & 77.823 & 180.113 & 211.386 & 7.557 \\
+FL & Client 4(Cleveland) & 112.336 & 180.113 & 225.522 & 8.568 \\
+FL & Global Server & 720.450 & 333.239 & 225.522 & 30.870 \\
+\bottomrule
+\end{tabular}
+\end{table*}

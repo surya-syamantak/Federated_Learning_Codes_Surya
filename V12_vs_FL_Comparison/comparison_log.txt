@@ -1,0 +1,128 @@
+Projects:
+  v12: Fed_Code_v12_ProposedPedersenZKP_LaplaceDP_eps2-3 | 30 rounds | validation patients Hungary 53, Switzerland 22, VA Long Beach 36, Cleveland 103
+  FL: Federated-Learning_ProposedZKP | 30 rounds | validation patients Hungary 59, Switzerland 25, VA Long Beach 40, Cleveland 61
+ZKP (read from each project's zkp.py): the same proposed Pedersen ZKP in both projects
+  v12: {'chained commitment C_t (C_{t-1})^lambda': True, 'server-sent challenge': True, 'Fiat-Shamir': False, 'group seed': '"FedRF-Diff Pedersen ZKP group"'}
+  FL: {'chained commitment C_t (C_{t-1})^lambda': True, 'server-sent challenge': True, 'Fiat-Shamir': False, 'group seed': '"FedRF-Diff Pedersen ZKP group"'}
+
+=== Computation per round, averaged over the rounds (s): each client and the Global Server ===
+Project                    v12  v12 min  v12 max      FL  FL min  FL max  FL / v12
+Entity                                                                            
+Client 1(Hungary)       0.7745   0.6633   1.0800 13.5678  4.9844 18.5113   17.5182
+Client 2(Switzerland)   0.5446   0.4833   0.6735 12.6608  4.6528 16.7918   23.2460
+Client 3(VA Long Beach) 0.6324   0.5447   0.7964 13.2707  4.4158 18.1165   20.9845
+Client 4(Cleveland)     1.4811   1.2442   1.7168 13.2677  4.8892 20.1799    8.9582
+Global Server           0.3633   0.3168   0.5126  0.1186  0.0418  0.2228    0.3266
+
+Computation by category (mean per round, s):
+Client side (mean over the 4 clients):
+                                  v12      FL
+Encoding / serialization       0.2952  0.0079
+ZKP proof generation           0.0003  0.0028
+Local model update             0.4939 13.1766
+Evaluation / convergence check 0.0688  0.0045
+Server side:
+                          v12     FL
+Aggregation / learning 0.3576 0.0027
+Update validation      0.0000 0.0914
+ZKP proof verification 0.0057 0.0245
+
+=== Communication per round, averaged over the rounds (RTT 50 ms, up 20 Mbit/s, down 50 Mbit/s; round trips v12 4, FL 3) ===
+                                 Sent mean (KB)  Received mean (KB)  Total mean (KB)  Time mean (ms)  Time min (ms)  Time max (ms)  Data over the run (MB)
+Entity                  Project                                                                                                                           
+Client 1(Hungary)       v12             10.4463            457.3424         467.7887        279.2098       278.5374       280.0734                 13.7047
+                        FL              76.9117            180.1126         257.0243        211.0127       189.6006       226.5715                  7.5300
+Client 2(Switzerland)   v12              6.5469            457.2243         463.7712        277.5932       276.9208       278.4568                 13.5870
+                        FL              66.1684            180.1126         246.2810        206.6122       189.8690       219.3447                  7.2153
+Client 3(VA Long Beach) v12              8.2227            457.2751         465.4977        278.2879       277.6155       279.1515                 13.6376
+                        FL              77.8230            180.1126         257.9356        211.3860       196.5442       227.6047                  7.5567
+Client 4(Cleveland)     v12             16.8916            457.5378         474.4294        281.8818       281.2094       282.7454                 13.8993
+                        FL             112.3359            180.1126         292.4485        225.5224       196.7630       244.8863                  8.5678
+Global Server           v12           1829.3796             42.1074        1871.4870        281.8818       281.2094       282.7454                 54.8287
+                        FL             720.4504            333.2391        1053.6895        225.5224       196.7630       244.8863                 30.8698
+
+=== Validation metrics averaged over the rounds (v12: 30, FL: 30) ===
+                                         v12      FL  FL - v12
+Entity                  Metric                                
+Client 1(Hungary)       Accuracy      0.8616  0.9729    0.1112
+                        Precision     0.7332  0.9623    0.2291
+                        Recall        0.9537  0.9619    0.0082
+                        Specificity   0.8143  0.9789    0.1647
+                        F1 Score      0.8271  0.9619    0.1348
+                        MCC           0.7358  0.9411    0.2053
+                        Cohen's Kappa 0.7166  0.9409    0.2242
+Client 2(Switzerland)   Accuracy      0.6985  0.7933    0.0948
+                        Precision     0.9944  0.9082   -0.0862
+                        Recall        0.6889  0.8623    0.1734
+                        Specificity   0.9000  0.0000   -0.9000
+                        F1 Score      0.8073  0.8844    0.0771
+                        MCC           0.2705 -0.1119   -0.3824
+                        Cohen's Kappa 0.1583 -0.1075   -0.2658
+Client 3(VA Long Beach) Accuracy      0.8546  0.9183    0.0637
+                        Precision     0.9386  0.9177   -0.0209
+                        Recall        0.8654  0.9800    0.1146
+                        Specificity   0.8222  0.7333   -0.0889
+                        F1 Score      0.8989  0.9475    0.0486
+                        MCC           0.6519  0.7764    0.1245
+                        Cohen's Kappa 0.6373  0.7643    0.1270
+Client 4(Cleveland)     Accuracy      0.7825  0.6934   -0.0891
+                        Precision     0.8250  0.6343   -0.1907
+                        Recall        0.6847  0.7857    0.1010
+                        Specificity   0.8679  0.6152   -0.2527
+                        F1 Score      0.7461  0.7019   -0.0442
+                        MCC           0.5683  0.4034   -0.1649
+                        Cohen's Kappa 0.5586  0.3938   -0.1648
+Global Server           Accuracy      0.8056  0.8447    0.0391
+                        Precision     0.8545  0.8344   -0.0201
+                        Recall        0.7708  0.8964    0.1256
+                        Specificity   0.8453  0.7811   -0.0642
+                        F1 Score      0.8084  0.8642    0.0558
+                        MCC           0.6182  0.6859    0.0677
+                        Cohen's Kappa 0.6120  0.6834    0.0714
+
+=== Validation metrics of the last round (v12: round 30, FL: round 30) ===
+                                         v12      FL  FL - v12
+Entity                  Metric                                
+Client 1(Hungary)       Accuracy      0.8679  0.9831    0.1151
+                        Precision     0.7391  0.9545    0.2154
+                        Recall        0.9444  1.0000    0.0556
+                        Specificity   0.8286  0.9737    0.1451
+                        F1 Score      0.8293  0.9767    0.1475
+                        MCC           0.7386  0.9641    0.2254
+                        Cohen's Kappa 0.7242  0.9634    0.2393
+Client 2(Switzerland)   Accuracy      0.9545  0.8000   -0.1545
+                        Precision     1.0000  0.9091   -0.0909
+                        Recall        0.9524  0.8696   -0.0828
+                        Specificity   1.0000  0.0000   -1.0000
+                        F1 Score      0.9756  0.8889   -0.0867
+                        MCC           0.6901 -0.1089   -0.7990
+                        Cohen's Kappa 0.6452 -0.1062   -0.7514
+Client 3(VA Long Beach) Accuracy      0.8889  0.9000    0.0111
+                        Precision     0.9259  0.8824   -0.0436
+                        Recall        0.9259  1.0000    0.0741
+                        Specificity   0.7778  0.6000   -0.1778
+                        F1 Score      0.9259  0.9375    0.0116
+                        MCC           0.7037  0.7276    0.0239
+                        Cohen's Kappa 0.7037  0.6923   -0.0114
+Client 4(Cleveland)     Accuracy      0.7961  0.6721   -0.1240
+                        Precision     0.8462  0.6111   -0.2350
+                        Recall        0.6875  0.7857    0.0982
+                        Specificity   0.8909  0.5758   -0.3152
+                        F1 Score      0.7586  0.6875   -0.0711
+                        MCC           0.5949  0.3663   -0.2286
+                        Cohen's Kappa 0.5854  0.3538   -0.2316
+Global Server           Accuracy      0.8458  0.8378   -0.0080
+                        Precision     0.8716  0.8158   -0.0558
+                        Recall        0.8333  0.9118    0.0784
+                        Specificity   0.8600  0.7470   -0.1130
+                        F1 Score      0.8520  0.8611    0.0091
+                        MCC           0.6920  0.6737   -0.0182
+                        Cohen's Kappa 0.6912  0.6677   -0.0235
+
+Figures (600-dpi PNG + vector PDF):
+  saved C:\Users\SURYA\Documents\Bakchudi_Fed\V12_vs_FL_Comparison\outputs\figures\fig1_computation_comparison.png (+ .pdf)
+  saved C:\Users\SURYA\Documents\Bakchudi_Fed\V12_vs_FL_Comparison\outputs\figures\fig2_communication_comparison.png (+ .pdf)
+  saved C:\Users\SURYA\Documents\Bakchudi_Fed\V12_vs_FL_Comparison\outputs\figures\fig3_averaged_metrics.png (+ .pdf)
+  saved C:\Users\SURYA\Documents\Bakchudi_Fed\V12_vs_FL_Comparison\outputs\figures\fig4_last_round_metrics.png (+ .pdf)
+
+Tables in C:\Users\SURYA\Documents\Bakchudi_Fed\V12_vs_FL_Comparison\outputs

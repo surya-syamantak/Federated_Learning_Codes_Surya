@@ -1,0 +1,24 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{Design properties of the two SMPC schemes.}
+\label{tab:smpc_props}
+\begin{tabular}{lll}
+\toprule
+Property & Additive secret sharing (v14) & Proposed adaptive-prime pairwise masking (v15) \\
+\midrule
+Primitive & n-out-of-n additive secret sharing & self-randomized pairwise masking (PRG streams) \\
+Modulus & fixed prime 2\^{}127 - 1 & adaptive prime p\_t = Pool[H(seed||t) mod 3], 61-bit pool \\
+Encoding & fixed point 2\^{}32 (reals), integers as is & quantization S\_q = 10\^{}6 \\
+One-time setup & none & pairwise Diffie-Hellman keys (2048-bit ZKP group) \\
+Client-to-client messages per round & N - 1 shares sent, N - 1 received & none \\
+Client-to-server messages per round & 1 partial sum & 1 masked vector \\
+Round trips per round & 2 & 1 \\
+Bytes per client and round (6 values, N = 4) & 384 up, 288 down & 48 up, 0 down \\
+Server learns & only the sum & only the sum \\
+Collusion threshold & server + up to N - 2 clients learn nothing more & server + up to N - 2 clients learn nothing more \\
+Security & information-theoretic (uniform shares) & computational (PRG, Diffie-Hellman) \\
+Drop-out during an aggregation & not tolerated (all shares needed) & recovery step: survivors reveal their pairwise terms with the dropped client \\
+\bottomrule
+\end{tabular}
+\end{table*}

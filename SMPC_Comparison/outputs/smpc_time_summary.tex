@@ -1,0 +1,22 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{SMPC times (ms) per client and Global Server: v14 additive sharing vs v15 proposed masking.}
+\label{tab:smpc_times}
+\begin{tabular}{llrrrr}
+\toprule
+scheme & entity & min\_ms & max\_ms & mean\_ms & one\_time\_setup\_ms \\
+\midrule
+v14 & Client 1(Hungary) & 0.0302 & 0.1174 & 0.04581 & 0 \\
+v14 & Client 2(Switzerland) & 0.0161 & 0.0571 & 0.02393 & 0 \\
+v14 & Client 3(VA Long Beach) & 0.0146 & 0.0473 & 0.02131 & 0 \\
+v14 & Client 4(Cleveland) & 0.0139 & 0.0426 & 0.02043 & 0 \\
+v14 & Global Server & 0.0056 & 0.0213 & 0.01004 & 0 \\
+v15 & Client 1(Hungary) & 0.1144 & 0.2004 & 0.134 & 1.268 \\
+v15 & Client 2(Switzerland) & 0.1029 & 0.2016 & 0.1248 & 1.189 \\
+v15 & Client 3(VA Long Beach) & 0.0983 & 0.5828 & 0.1705 & 1.185 \\
+v15 & Client 4(Cleveland) & 0.0977 & 0.4633 & 0.1548 & 1.185 \\
+v15 & Global Server & 0.0084 & 0.0204 & 0.01361 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table*}

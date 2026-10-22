@@ -1,0 +1,29 @@
+\begin{table}[t]
+\centering
+\caption{Communication and computation of FedRF-Diff with and without Laplace DP (seed 42, 4 clients, Schnorr ZKP).}
+\label{tab:dp_comparison}
+\begin{tabular}{lrr}
+\toprule
+Quantity & Laplace DP, $\varepsilon_t\sim U[2,3]$ (v10) & No DP (v13) \\
+\midrule
+Rounds & 30.00 & 7.00 \\
+Converged & no & yes \\
+Comm per client-round (ms) & 229.21 & 229.89 \\
+Up per client-round (KB) & 10.72 & 10.72 \\
+Down per client-round (KB) & 468.29 & 472.52 \\
+Comm until stop (s) & 6.96 & 1.63 \\
+Data until stop (MB) & 57.48 & 13.53 \\
+Comp per round (s) & 4.72 & 3.51 \\
+Comp per client-round (s) & 1.07 & 0.797 \\
+Comp until stop (s) & 141.62 & 24.55 \\
+Global Server Accuracy (mean) & 0.806 & 0.844 \\
+Global Server Precision (mean) & 0.854 & 0.872 \\
+Global Server Recall (mean) & 0.771 & 0.828 \\
+Global Server Specificity (mean) & 0.845 & 0.861 \\
+Global Server F1 score (mean) & 0.808 & 0.850 \\
+Global Server MCC (mean) & 0.618 & 0.689 \\
+Global Server Cohen's kappa (mean) & 0.612 & 0.687 \\
+DP time per client-round (ms) & 0.157 & 0.000 \\
+\bottomrule
+\end{tabular}
+\end{table}

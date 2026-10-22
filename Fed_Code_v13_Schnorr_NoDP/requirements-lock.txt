@@ -1,0 +1,19 @@
+# Exact package versions behind the results in README.md (Python 3.11).
+#
+#   pip install -r requirements-lock.txt
+#
+# reproduces the reported numbers exactly. Other versions also work
+# (requirements.txt), but scikit-learn changes between versions can move a
+# patient between training and validation or change the random forests, so the
+# numbers then differ slightly. Check the second line of the run's output:
+#   Client 3(VA Long Beach) 140/36, Client 4(Cleveland) 409/103  -> same split as README
+# These versions need Python 3.11 or newer.
+numpy==2.4.6
+pandas==3.0.6
+scipy==1.17.1
+scikit-learn==1.9.1
+joblib==1.6.0
+threadpoolctl==3.7.0
+matplotlib==3.11.2
+gmpy2==2.3.1
+pytest==9.1.1

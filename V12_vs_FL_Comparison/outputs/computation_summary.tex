@@ -1,0 +1,22 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{Computation per round (s) of FedRF-Diff v12 and Federated-Learning, per client and Global Server, averaged over 30 rounds.}
+\label{tab:v12_fl_comp}
+\begin{tabular}{llrrrr}
+\toprule
+Project & Entity & Total mean (s) & Total min (s) & Total max (s) & Total over the run (s) \\
+\midrule
+v12 & Client 1(Hungary) & 0.774 & 0.663 & 1.080 & 23.235 \\
+v12 & Client 2(Switzerland) & 0.545 & 0.483 & 0.674 & 16.339 \\
+v12 & Client 3(VA Long Beach) & 0.632 & 0.545 & 0.796 & 18.972 \\
+v12 & Client 4(Cleveland) & 1.481 & 1.244 & 1.717 & 44.432 \\
+v12 & Global Server & 0.363 & 0.317 & 0.513 & 10.898 \\
+FL & Client 1(Hungary) & 13.711 & 4.843 & 21.142 & 411.317 \\
+FL & Client 2(Switzerland) & 12.299 & 4.133 & 16.707 & 368.969 \\
+FL & Client 3(VA Long Beach) & 12.875 & 4.488 & 16.184 & 386.256 \\
+FL & Client 4(Cleveland) & 14.342 & 5.273 & 23.013 & 430.259 \\
+FL & Global Server & 0.226 & 0.085 & 0.459 & 6.769 \\
+\bottomrule
+\end{tabular}
+\end{table*}

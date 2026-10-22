@@ -1,0 +1,3 @@
+scheme,rounds,total_computation_per_round_s,smpc_per_round_ms (all clients + server),smpc_share_of_computation_%
+v14,7,5.639700500007685,0.12152856548449709,0.002154876229408485
+v15,7,7.143553385718925,1.28731428412703,0.01802064343356867

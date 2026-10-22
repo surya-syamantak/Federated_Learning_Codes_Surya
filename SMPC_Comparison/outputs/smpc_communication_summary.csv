@@ -1,0 +1,3 @@
+scheme,label,bytes_up_per_client_round,bytes_down_per_client_round,messages_sent_per_client_round,messages_received_per_client_round,client_to_client_messages_per_round,round_trips_per_round,comm_ms_per_client_round,one_time_setup_bytes_up,one_time_setup_bytes_down,one_time_setup_comm_ms,server_bytes_received_per_round,smpc_bytes_total_run
+v14,Additive secret sharing (v14),384.0,288.0,4.0,3.0,12,2,100.19968000000001,0.0,0.0,0.0,384.0,18816
+v15,Proposed adaptive-prime pairwise masking (v15),48.0,0.0,1.0,0.0,0,1,50.0192,256.0,768.0,50.225280000000005,192.0,5440

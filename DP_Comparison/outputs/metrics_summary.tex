@@ -1,0 +1,18 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{Validation metrics averaged over the rounds, with Laplace DP (v10, $\varepsilon_t\sim U[2,3]$, 30 rounds) and without DP (v13, 7 rounds), seed 42.}
+\label{tab:dp_metrics}
+\begin{tabular}{lrrrrrrrrrrrrrr}
+\toprule
+Client & \multicolumn{2}{c}{Accuracy} & \multicolumn{2}{c}{Precision} & \multicolumn{2}{c}{Recall} & \multicolumn{2}{c}{Specificity} & \multicolumn{2}{c}{F1 score} & \multicolumn{2}{c}{MCC} & \multicolumn{2}{c}{Cohen's $\kappa$} \\
+ & DP & No DP & DP & No DP & DP & No DP & DP & No DP & DP & No DP & DP & No DP & DP & No DP \\
+\midrule
+Client 1(Hungary) & 0.862 & 0.884 & 0.733 & 0.748 & 0.954 & 0.992 & 0.814 & 0.829 & 0.827 & 0.853 & 0.736 & 0.781 & 0.717 & 0.760 \\
+Client 2(Switzerland) & 0.698 & 0.825 & 0.994 & 0.968 & 0.689 & 0.844 & 0.900 & 0.429 & 0.807 & 0.900 & 0.270 & 0.213 & 0.158 & 0.196 \\
+Client 3(VA Long Beach) & 0.855 & 0.909 & 0.939 & 0.961 & 0.865 & 0.915 & 0.822 & 0.889 & 0.899 & 0.938 & 0.652 & 0.772 & 0.637 & 0.768 \\
+Client 4(Cleveland) & 0.783 & 0.804 & 0.825 & 0.845 & 0.685 & 0.711 & 0.868 & 0.886 & 0.746 & 0.772 & 0.568 & 0.610 & 0.559 & 0.603 \\
+Global Server & 0.806 & 0.844 & 0.854 & 0.872 & 0.771 & 0.828 & 0.845 & 0.861 & 0.808 & 0.850 & 0.618 & 0.689 & 0.612 & 0.687 \\
+\bottomrule
+\end{tabular}
+\end{table*}

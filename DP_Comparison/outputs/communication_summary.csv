@@ -1,0 +1,3 @@
+version,dp,rounds,bytes_up_per_client_round_mean,bytes_down_per_client_round_mean,comm_ms_per_client_round_min,comm_ms_per_client_round_max,comm_ms_per_client_round_mean,comm_s_per_round_slowest_client_mean,comm_s_per_round_all_clients_mean,comm_s_total_until_stop (clients in parallel),comm_s_total_until_stop (all clients summed),MB_total_until_stop
+v10,"Laplace DP, eps_t ~ U[2, 3] (v10)",30,10715.5,468289.1666666667,226.89007999999998,232.71464,229.21246666666667,0.23185106666666672,0.9168498666666667,6.955532000000002,27.505496,57.48056
+v13,No DP (v13),7,10715.5,472520.78571428574,227.76048,233.48264,229.8895257142857,0.23252812571428572,0.9195581028571428,1.62769688,6.43690672,13.530616

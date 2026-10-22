@@ -1,0 +1,22 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{Same-machine SMPC benchmark for N clients: v14 vs v15.}
+\label{tab:smpc_bench}
+\begin{tabular}{lrrrrrrrr}
+\toprule
+scheme & clients & client\_ms\_min & client\_ms\_max & client\_ms\_mean & server\_ms\_mean & bytes\_up & bytes\_down & setup\_ms\_per\_client \\
+\midrule
+v14 & 2 & 0.01125 & 0.3197 & 0.01878 & 0.004632 & 192 & 96 & 0 \\
+v14 & 4 & 0.01887 & 0.03675 & 0.02304 & 0.005882 & 384 & 288 & 0 \\
+v14 & 8 & 0.03333 & 0.05137 & 0.03811 & 0.007666 & 768 & 672 & 0 \\
+v14 & 16 & 0.06133 & 0.1001 & 0.06599 & 0.00888 & 1,536 & 1,440 & 0 \\
+v14 & 32 & 0.1181 & 0.5397 & 0.1506 & 0.01352 & 3,072 & 2,976 & 0 \\
+v15 & 2 & 0.0337 & 0.05 & 0.03696 & 0.004516 & 48 & 0 & 3.781 \\
+v15 & 4 & 0.09525 & 0.4419 & 0.1194 & 0.00668 & 48 & 0 & 11.87 \\
+v15 & 8 & 0.2159 & 0.4269 & 0.2553 & 0.007998 & 48 & 0 & 24.51 \\
+v15 & 16 & 0.4626 & 0.708 & 0.4939 & 0.0105 & 48 & 0 & 51.8 \\
+v15 & 32 & 0.9512 & 1.471 & 1.109 & 0.02225 & 48 & 0 & 106.2 \\
+\bottomrule
+\end{tabular}
+\end{table*}
