@@ -57,12 +57,14 @@ def _fmt(x: float | None, spec: str = ".4f") -> str:
 
 def format_round(t: int, sessions: dict, final_metrics: pd.DataFrame | None, row: dict | None,
                  zkp_enabled: bool, eps_z: float = 0.0, patience: int = 0,
-                 epsilon: float | None = None, delta: float = 0.0) -> str:
+                 epsilon: float | None = None, delta: float = 0.0, bound_checks: dict | None = None) -> str:
     out = ["", "=" * 30 + f" Round {t} " + "=" * 30]
     if zkp_enabled:
         out += ["ZKP authentication (per client):", zkp_round_text(sessions)]
     else:
         out.append("ZKP authentication: disabled")
+    if bound_checks:
+        out += ["", "Bounded-update enforcement (per client):", bounds_round_text(bound_checks)]
     if final_metrics is None:
         return "\n".join(out)
     out += ["", f"Validation metrics of the global model after round {t}:",
@@ -107,4 +109,39 @@ def format_end_of_run(result) -> str:
         out.append(f"Authentications: {n_ok}/{len(log)} successful, {len(log) - n_ok} failed")
     else:
         out += ["", "=== ZKP time analysis ===", "ZKP disabled; no timing."]
+    return "\n".join(out)
+
+
+# --- bounded-update enforcement (bounds.py) ------------------------------------------
+_BOUND_MS = 1000.0
+
+
+def bounds_round_text(bound_checks: dict) -> str:
+    """Per client: within / out of bound, the share of the bound used, check time, reason."""
+    from . import bounds
+
+    rows = [{"Client": name, "Update": chk.outcome, "Bound Used (%)": bounds.usage(chk, b),
+             "Check Time (ms)": chk.check_s * _BOUND_MS, "Reason": "; ".join(chk.reasons) or "-"}
+            for name, (chk, b) in bound_checks.items()]
+    return pd.DataFrame(rows).to_string(index=False, float_format=lambda v: f"{v:.4f}")
+
+
+def bounds_summary(result) -> str:
+    """End-of-run summary of the bounded-update enforcement."""
+    log = getattr(result, "bounds_log", None)
+    out = ["", "=== Bounded-update enforcement ==="]
+    if log is None or not len(log):
+        return "\n".join(out + ["Bounded-update enforcement disabled."])
+    rows = []
+    for name, g in log.groupby("client", sort=False):
+        out_rounds = g.loc[~g["within"].astype(bool), "round"].tolist()
+        rows.append({"Client": name, "Rounds": len(g), "Within Bound": len(g) - len(out_rounds),
+                     "Out Of Bound": len(out_rounds), "Max Bound Used (%)": g["usage_pct"].max(),
+                     "Mean Check Time (ms)": g["check_s"].mean() * _BOUND_MS,
+                     "Bounded Update": ("Within bound in every round" if not out_rounds
+                                        else "Rejected in round(s) " + ", ".join(map(str, out_rounds)))})
+    out.append(pd.DataFrame(rows).to_string(index=False, float_format=lambda v: f"{v:.4f}"))
+    ok = int(log["within"].astype(bool).sum())
+    out.append(f"Bounded updates: {ok}/{len(log)} within bound (accepted), {len(log) - ok} out of bound (rejected); "
+               f"bound mode: {log['mode'].iloc[0]}")
     return "\n".join(out)

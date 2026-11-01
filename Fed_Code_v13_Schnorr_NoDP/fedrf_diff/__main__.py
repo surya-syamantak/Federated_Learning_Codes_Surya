@@ -19,6 +19,7 @@ from .config import Config
 from .pipeline import run
 from .plotting import plot_communication_cost, plot_computation_cost, plot_convergence, plot_zkp_times
 from .report import format_end_of_run
+from .report import bounds_summary
 
 
 def _parse_bool(text: str) -> bool:
@@ -73,7 +74,10 @@ def main(argv: list[str] | None = None) -> None:
     result.costs.to_csv(out / "costs.csv", index=False)
     if result.zkp_log is not None:
         result.zkp_log.to_csv(out / "zkp_times.csv", index=False)
+    if result.bounds_log is not None:
+        result.bounds_log.to_csv(out / "bounds_log.csv", index=False)
     print(format_end_of_run(result))
+    print(bounds_summary(result))
     status = "Converged" if result.converged else "Stopped at max_rounds without converging"
     print(f"\n{status} after {result.rounds_run} rounds (seed {cfg.seed}).")
 

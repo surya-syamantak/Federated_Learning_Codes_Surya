@@ -119,9 +119,10 @@ def test_federation_wires_the_proposed_zkp(federation):
 def test_explicit_trees_reproduce_the_local_forest(federation):
     schema, clients, server = federation
     c = clients[3]
-    trees = c.grow(0, 6, None)
+    n = c.cfg["initial_trees"]  # an honest F_k^(0) (bounded-update enforcement)
+    trees = c.grow(0, n, None)
     seed = int(c._seed(0, 0).generate_state(1)[0])
-    forest = train_local_forest(c.X_train, c.y_train, 6, seed, c.cfg["rf_params"])
+    forest = train_local_forest(c.X_train, c.y_train, n, seed, c.cfg["rf_params"])
     np.testing.assert_allclose(forest_proba(trees, c.X_val), forest.predict_proba(c.X_val), atol=1e-12)
     c.forest = trees
     received, rejected = server.receive(c.client_id, c.serialize(1), 1, CREATORS)

@@ -65,6 +65,26 @@ and F_k^(t) metrics), `rounds.csv` (|U|, |G|, flags, decision, DP budget), `zkp_
 (the returned G and every F_k as explicit trees). The figures are `convergence`, `zkp_times`, `computation_cost`,
 `communication_cost` and `accuracy_vs_dp_budget`.
 
+## Bounded-update enforcement
+
+After ZKP authentication and the per-tree validation, `FederatedServer.receive` checks each
+uploaded forest against two public bounds derived from the configuration (`server.Limits`):
+
+- **trees per update** <= max(`initial_trees`, `local_budget`), because CapOrPrune keeps
+  F_k within B_k;
+- **new tree ids** (ids the server has never accepted) <= max(`initial_trees`,
+  `supplementary_trees`) x (t - t_last), because a client grows one H_k per round. Here t_last
+  is the client's last accepted round.
+
+An upload outside either bound is rejected as a whole: none of its trees enter the candidate
+pool U^(t), and none of its new tree ids are registered.
+
+Each round prints a "Bounded-update enforcement (per client)" table, and the run summary adds a
+"Bounded-update enforcement summary". The checks are also saved as extra columns in
+`tree_transfer_times.csv`.
+
+Set `"bounded_update": False` in `config.py` to switch the check off. Tests: `tests/test_bounds.py`.
+
 ## Privacy scope
 
 Each released leaf vector is ε-DP (pure DP). Leaves partition a tree's training sample, so a patient costs ε per

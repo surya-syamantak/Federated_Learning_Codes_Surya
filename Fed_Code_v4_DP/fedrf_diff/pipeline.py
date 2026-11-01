@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 from . import privacy, zkp
+from . import bounds
 from .client import Client
 from .config import Config
 from .convergence import ConvergenceMonitor, weighted_loss
@@ -41,6 +42,8 @@ class RunResult:
     global_history: pd.DataFrame | None = None
     # One row per round and client: ZKP outcome, vectors, the three times, bytes.
     zkp_log: pd.DataFrame | None = None
+    # One row per round and authenticated client: bounded-update check (bounds.py).
+    bounds_log: pd.DataFrame | None = None
     # One row per round and client (and "Global Server"): computation seconds,
     # bytes sent up and down, and the privacy budget spent so far.
     costs: pd.DataFrame | None = None
@@ -51,7 +54,7 @@ class RunResult:
 
 
 def run(cfg: Config, verbose: bool = True, tamper: dict[int, str] | None = None,
-        epsilon: float | None = privacy.EPSILON, zkp_enabled: bool = zkp.ENABLED) -> RunResult:
+        epsilon: float | None = privacy.EPSILON, zkp_enabled: bool = zkp.ENABLED, bounds_enabled: bool = bounds.ENABLED) -> RunResult:
     """Run up to ``cfg.max_rounds`` rounds or until the stopping rule fires.
 
     ``epsilon`` is the per-round DP budget of each transmitted vector
@@ -90,6 +93,7 @@ def run(cfg: Config, verbose: bool = True, tamper: dict[int, str] | None = None,
     log("Global Server = the global model scored on all clients' validation patients together.")
 
     rows, rejected, model, converged, final_metrics = [], {}, None, False, None
+    bound_rows: list = []
     round_tables, global_rows, zkp_rows, cost_rows = [], [], [], []
     for t in range(1, cfg.max_rounds + 1):
         t0 = time.perf_counter()
@@ -118,9 +122,32 @@ def run(cfg: Config, verbose: bool = True, tamper: dict[int, str] | None = None,
                           "proof_verification_s": s.proof_verification_s,
                           "bytes_up": s.bytes_up, "bytes_down": s.bytes_down}
                          for n, s in sessions.items()]
+        # Stage 1.6: bounded-update enforcement (bounds.py) - every authenticated update must lie
+        # inside the public bound that every honest update satisfies, or it is rejected this round.
+        bound_info: dict = {}
+        if bounds_enabled:
+            for name in list(accepted):
+                msg = accepted[name]
+                c = next(c for c in clients if c.name == name)
+                # Declared release parameters of this round (adaptive clipping): C_t, sigma_t.
+                bound = (bounds.bound_gaussian(len(msg.Z_tilde), len(fed.X_landmarks), cfg.d_z,
+                                               c.dp.last_clip, c.sigma_sent, c.dp.noise_ratio,
+                                               landmarks_noised=privacy.NOISE_ON_LANDMARKS)
+                         if c.dp.enabled else bounds.bound_none(len(msg.Z_tilde) + len(msg.P), len(fed.X_landmarks), cfg.d_z))
+                bound_info[name] = (bounds.check_update(msg.Z_tilde, msg.P, msg.y, bound), bound)
+                if not bound_info[name][0].within:
+                    del accepted[name]
+            bound_rows += [{"round": t, "client": n, "within": chk.within, "usage_pct": bounds.usage(chk, b),
+                            "reasons": "; ".join(chk.reasons), "mode": b.mode, **chk.stats,
+                            "bound_entry_max": b.entry_max, "bound_frob_sq_max": b.frob_sq_max,
+                            "bound_landmark_norm_max": b.landmark_norm_max,
+                            "bound_patient_mean_sq_max": b.patient_mean_sq_max, "check_s": chk.check_s}
+                           for n, (chk, b) in bound_info.items()]
+        rejected[t] = [n for n in messages if n not in accepted]
+        bound_s = sum(chk.check_s for chk, _ in bound_info.values())
         if not accepted:
-            log(format_round(t, sessions, None, None, zkp_enabled))
-            log(f"Round {t}: every client failed authentication; stopping.")
+            log(format_round(t, sessions, None, None, zkp_enabled, bound_checks=bound_info))
+            log(f"Round {t}: no update was accepted (ZKP authentication or bounded-update check); stopping.")
             break
 
         # Stage 2: alignment, aggregation, global model.
@@ -169,7 +196,8 @@ def run(cfg: Config, verbose: bool = True, tamper: dict[int, str] | None = None,
                 "epsilon_spent": c.dp.spent_epsilon(),
                 "clip_norm": c.dp.last_clip if c.dp.enabled else None,
                 "sigma": c.sigma_sent})
-        cost_rows.append({"round": t, "client": "Global Server", "computation_s": server_s + verify_s,
+        cost_rows.append({"round": t, "client": "Global Server", "computation_s": server_s + verify_s + bound_s,
+                          "bound_check_s": bound_s,
                           "proof_verification_s": verify_s, "learning_s": server_s,
                           "bytes_up": sum(r["bytes_down"] for r in cost_rows[-len(clients):]),
                           "bytes_down": sum(r["bytes_up"] for r in cost_rows[-len(clients):]),
@@ -177,6 +205,7 @@ def run(cfg: Config, verbose: bool = True, tamper: dict[int, str] | None = None,
 
         row = {"round": t, "delta_z": dz, "L_avg": L_avg, "delta_l": dl,
                "patience": monitor.counter, "n_accepted": len(accepted),
+               "n_out_of_bound": sum(not chk.within for chk, _ in bound_info.values()),
                "zkp_seconds": sum(s.authentication_s for s in sessions.values()),
                "round_seconds": time.perf_counter() - t0, "epsilon_spent": mech.spent_epsilon()}
         for n, m in metrics.items():
@@ -194,7 +223,7 @@ def run(cfg: Config, verbose: bool = True, tamper: dict[int, str] | None = None,
                             "L_avg": L_avg, "delta_z": dz, "delta_l": dl,
                             "epsilon_spent": mech.spent_epsilon()})
 
-        log(format_round(t, sessions, final_metrics, row, zkp_enabled,
+        log(format_round(t, sessions, final_metrics, row, zkp_enabled, bound_checks=bound_info,
                          eps_z=monitor.eps_z, patience=cfg.patience,
                          epsilon=epsilon, delta=mech.delta))
         if converged:
@@ -208,6 +237,7 @@ def run(cfg: Config, verbose: bool = True, tamper: dict[int, str] | None = None,
                      final_metrics=final_metrics, round_metrics=round_metrics,
                      global_history=pd.DataFrame(global_rows),
                      zkp_log=pd.DataFrame(zkp_rows) if zkp_rows else None,
+                     bounds_log=pd.DataFrame(bound_rows) if bound_rows else None,
                      costs=pd.DataFrame(cost_rows))
 
 

@@ -9,6 +9,13 @@ and the creator it was born with; a copy of a known tree must be identical to th
 only the creator may introduce a new tree id. A malformed tree is rejected on its own, a
 malformed upload as a whole.
 
+Bounded-update enforcement · before a forest enters U^(t) the server also checks it against
+public bounds derived from the protocol parameters: at most max(initial_trees, local_budget)
+trees per upload (CapOrPrune keeps F_k within B_k), and at most
+max(initial_trees, supplementary_trees) x (t - t_last) tree ids the server has never seen,
+where t_last is the client's last accepted round (one H_k is grown per round). An upload
+outside either bound is rejected as a whole and none of its new tree ids are registered.
+
 The valid trees form the candidate pool U^(t) = union of T_k^(t-1), and the aggregation policy
 A selects at most B of them: G^(t) = SelectTrees(U^(t), A, B). Tree parameters are never
 averaged. Step 7 · the server never sees validation metrics: it only tallies the clients'
@@ -18,6 +25,7 @@ boolean convergence flags.
 import hashlib
 import json
 import math
+import time
 from collections import deque
 from dataclasses import dataclass
 
@@ -39,11 +47,16 @@ class Limits:
     max_trees: int
     max_nodes: int
     max_depth: int
+    max_trees_per_client: int | None = None  # bounded update: trees in one upload
+    new_trees_per_round: int | None = None  # bounded update: new tree ids per elapsed round
 
     @classmethod
     def from_config(cls, cfg):
+        bounded = cfg.get("bounded_update", True)
         return cls(cfg["max_payload_bytes"], cfg["max_trees_per_update"], cfg["max_nodes_per_tree"],
-                   cfg["max_tree_depth"])
+                   cfg["max_tree_depth"],
+                   max(cfg["initial_trees"], cfg["local_budget"]) if bounded else None,
+                   max(cfg["initial_trees"], cfg["supplementary_trees"]) if bounded else None)
 
 
 class InvalidUpdate(ValueError):
@@ -223,14 +236,18 @@ class FederatedServer:
         self.known = {}  # tree_id -> digest of the first accepted copy
         self.global_forest = []  # G^(t)
         self.tree_size = {}  # tree_id -> bytes of its TreeMessage
+        self.last_accepted = {}  # client_id -> last round whose upload was within bound
+        self.last_bound = None  # bounded-update check of the latest receive()
 
     def receive(self, client_id, payload, rnd, creators):
-        """Step 3 · structural validation of one uploaded forest F_k^(t-1)."""
+        """Step 3 · structural validation and bounded-update enforcement of one uploaded forest F_k^(t-1)."""
+        self.last_bound = None
         try:
             checked, rejected = check_update(payload, self.schema, self.limits, client_id, rnd, creators)
         except InvalidUpdate as e:
             return [], [("<update>", str(e))]
-        valid, seen = [], set()
+        n_trees = len(checked) + len(rejected)  # every tree in the upload, well-formed or not
+        valid, seen, fresh = [], set(), {}
         for tree, digest in checked:
             known = self.known.get(tree.tree_id)
             if tree.tree_id in seen:
@@ -241,9 +258,35 @@ class FederatedServer:
                 rejected.append((tree.tree_id, "altered copy of a known tree"))
             else:
                 seen.add(tree.tree_id)
-                self.known.setdefault(tree.tree_id, digest)
+                if known is None:
+                    fresh[tree.tree_id] = digest
                 valid.append(tree)
+        bound = self.update_bound(client_id, rnd, n_trees, len(fresh))
+        if not bound["within"]:
+            return [], rejected + [("<update>", f"bounded-update: {bound['reason']}")]
+        self.known.update(fresh)
+        self.last_accepted[client_id] = rnd
         return valid, rejected
+
+    def update_bound(self, client_id, rnd, n_trees, n_new):
+        """Bounded-update enforcement: compare one upload with the public per-client bounds."""
+        t0 = time.perf_counter()
+        max_trees, per_round = self.limits.max_trees_per_client, self.limits.new_trees_per_round
+        max_new = None if per_round is None else per_round * (rnd - self.last_accepted.get(client_id, 0))
+        reasons, used = [], []
+        if max_trees is not None:
+            used.append(100 * n_trees / max_trees)
+            if n_trees > max_trees:
+                reasons.append(f"{n_trees} trees in the update > bound {max_trees}")
+        if max_new is not None:
+            used.append(100 * n_new / max_new if max_new else (0.0 if n_new == 0 else math.inf))
+            if n_new > max_new:
+                reasons.append(f"{n_new} new tree ids > bound {max_new}")
+        self.last_bound = {"enabled": bool(used), "trees": n_trees, "max_trees": max_trees,
+                           "new": n_new, "max_new": max_new, "within": not reasons,
+                           "used_pct": max(used) if used else math.nan, "reason": "; ".join(reasons),
+                           "check_s": time.perf_counter() - t0}
+        return self.last_bound
 
     def aggregate(self, valid_forests):
         """Step 3 · G^(t) = SelectTrees(U^(t), A, B) with U^(t) the union of the valid client trees."""

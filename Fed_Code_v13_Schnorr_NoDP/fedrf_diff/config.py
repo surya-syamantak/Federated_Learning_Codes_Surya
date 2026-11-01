@@ -12,6 +12,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from . import zkp
+from . import bounds
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DATA_PATH = REPO_ROOT / "data" / "heart_statlog_cleveland_hungary_final.csv"
@@ -67,5 +68,5 @@ class Config:
     output_dir: str = "outputs/run"
 
     def to_json(self, path: str | Path) -> None:
-        record = {**asdict(self), "privacy": {"mechanism": "none"}, "zkp": zkp.settings()}
+        record = {**asdict(self), "privacy": {"mechanism": "none"}, "zkp": zkp.settings(), "bounds": bounds.settings()}
         Path(path).write_text(json.dumps(record, indent=2))

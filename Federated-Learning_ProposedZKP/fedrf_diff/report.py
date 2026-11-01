@@ -8,6 +8,8 @@ from .metrics import METRICS
 SERVER = "Global Server"
 ZKP_TIMES = ["ZKP Authentication Time (ms)", "ZKP Proof Generation Time (ms)", "ZKP Proof Verification Time (ms)"]
 TRANSFER_TIMES = ["Serialization Time (ms)", "Tree Validation Time (ms)"]
+BOUND_COLUMNS = ["Bounded Update", "Trees In Update", "Max Trees", "New Trees", "Max New Trees",
+                 "Bound Used (%)", "Bound Check Time (ms)", "Bound Reason"]
 LOCAL_COLUMNS = ["Client", "Trees in F_k", "Kept from G", "Loss L_k", "Rel. Loss Change", "Prediction Change",
                  "G/F Disagreement", "q_k", "b_k"]
 
@@ -70,6 +72,10 @@ def round_report(rnd, zkp_rows, transfer_rows, round_metrics, local_rows, server
         print()
     print("Whole-tree transfer times (per client):")
     show(pd.DataFrame(transfer_rows)[["Client", *TRANSFER_TIMES]])
+    tr = pd.DataFrame(transfer_rows)
+    if "Bounded Update" in tr:
+        print("\nBounded-update enforcement (per client):")
+        show(tr[["Client", *BOUND_COLUMNS]])
     if round_metrics:
         print(f"\nValidation metrics of the global model G^({rnd}) after round {rnd}:")
         show(pd.DataFrame([{"Client": p, **m} for p, m in round_metrics.items()]))
@@ -127,6 +133,23 @@ def run_summary(res, names):
     print(f"Tree validation: {trees['Trees Accepted'].sum()}/{trees['Trees Sent'].sum()} uploaded trees accepted, "
           f"{trees['Trees Rejected'].sum()} rejected (schema, node references, split fields, leaf outputs, "
           f"size and depth limits, tree provenance)")
+    if "Bounded Update" in res.transfer:
+        print("\n=== Bounded-update enforcement summary ===")
+        t = res.transfer
+        rows = []
+        for c in names:
+            tc = t[t["Client"] == c]
+            rows.append({"Client": c, "Within bound": int((tc["Bounded Update"] == "Within bound").sum()),
+                         "Out of bound": int((tc["Bounded Update"] == "Out of bound").sum()),
+                         "Max Bound Used (%)": tc["Bound Used (%)"].max(),
+                         "Mean Check Time (ms)": tc["Bound Check Time (ms)"].mean()})
+        bt = pd.DataFrame(rows)
+        show(bt)
+        checked = int((t["Bounded Update"] != "n/a").sum())
+        print(f"Bounded updates: {bt['Within bound'].sum()}/{checked} within bound (accepted), "
+              f"{bt['Out of bound'].sum()} out of bound (rejected); bounds: trees per update <= "
+              f"max(initial_trees, local_budget), new tree ids <= max(initial_trees, supplementary_trees) "
+              f"x rounds since the last accepted update")
 
     if not res.tuning.empty:
         print(f"\n=== Local tuning time analysis over {n} rounds (min, max and mean per client) ===")

@@ -229,6 +229,35 @@ registered per client would add identity.
   messages (C_c and π_c); downlink = the ZKP result, the pickled `M_G`, `A_c`
   and the out-of-bag labels.
 
+## Bounded-update enforcement
+
+After ZKP authentication and before aggregation (pipeline Stage 1.6), the server checks every
+client update against a public bound (`fedrf_diff/bounds.py`). An update outside the bound is
+rejected for that round and never aggregated, just like an update that fails authentication.
+The check needs no secrets: it uses only the update and the public protocol parameters.
+
+Always checked: the shapes (`d_z` columns, the agreed number of landmark rows, one label per
+patient row), all values finite, labels in {0, 1}.
+
+With Laplace DP (L1 clip C, scale b = 2C/epsilon_t):
+- every landmark row is clipped but not noised, so ||p||_1 <= C exactly;
+- each patient row is a clipped row plus Laplace noise, so its expected squared norm is at most
+  C^2 + 2 b^2 d_z, with variance at most 20 b^4 d_z + 8 C^2 b^2.
+
+The mean over patient rows must stay below that expectation plus 8 standard deviations of the
+mean. An honest client stays far below this bound; an inflated or unclipped update does not.
+
+Outputs:
+- each round prints a "Bounded-update enforcement (per client)" table with the outcome, the
+  percentage of the bound used, the check time and the reason;
+- the end of the run prints a summary;
+- `outputs/run/bounds_log.csv` holds every check;
+- the history has an `n_out_of_bound` column;
+- the Global Server cost includes `bound_check_s`.
+
+To switch the check off for comparison, set `bounds.ENABLED = False` or call
+`run(..., bounds_enabled=False)`. Tests: `tests/test_bounds.py`.
+
 ## One round
 
 | Stage | Where | What |

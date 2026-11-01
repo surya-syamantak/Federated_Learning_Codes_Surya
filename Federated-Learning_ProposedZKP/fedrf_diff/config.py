@@ -28,6 +28,7 @@ CONFIG = {
     "max_trees_per_update": 500,
     "max_nodes_per_tree": 20_000,
     "max_tree_depth": 64,
+    "bounded_update": True,  # reject uploads above the public tree-count / new-tree bounds (server.Limits)
     "aggregation_policy": "consensus",  # A: "consensus", "client-balanced" or "newest" (server.select_trees)
     "global_budget": 100,  # B, trees in G^(t)
     # Step 6 · decentralized three-part convergence test (each client, own validation split)

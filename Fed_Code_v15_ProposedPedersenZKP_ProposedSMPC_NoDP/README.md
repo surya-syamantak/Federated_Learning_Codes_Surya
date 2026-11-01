@@ -245,6 +245,31 @@ before training would tie authentication to the enrolled client.
   outcome, the other clients' `A_j` (once), the pickled `M_G`, `A_c` and the
   out-of-bag labels.
 
+## Bounded-update enforcement
+
+After ZKP authentication and before aggregation (pipeline Stage 1.6), the server checks every
+client update against a public bound (`fedrf_diff/bounds.py`). An update outside the bound is
+rejected for that round and never aggregated, just like an update that fails authentication.
+The check needs no secrets: it uses only the update and the public protocol parameters.
+
+Always checked: the shapes (`d_z` columns, the agreed number of landmark rows, one label per
+patient row), all values finite, labels in {0, 1}.
+
+Without DP the update is the diffusion map Z = sqrt(n) V Lambda^tau, with orthonormal V and
+0 <= lambda <= 1. That gives two exact bounds over all n = patients + landmarks rows:
+every entry |z| <= sqrt(n), and ||Z||_F^2 <= n d_z.
+
+Outputs:
+- each round prints a "Bounded-update enforcement (per client)" table with the outcome, the
+  percentage of the bound used, the check time and the reason;
+- the end of the run prints a summary;
+- `outputs/run/bounds_log.csv` holds every check;
+- the history has an `n_out_of_bound` column;
+- the Global Server cost includes `bound_check_s`.
+
+To switch the check off for comparison, set `bounds.ENABLED = False` or call
+`run(..., bounds_enabled=False)`. Tests: `tests/test_bounds.py`.
+
 ## One round
 
 | Stage | Where | What |

@@ -175,6 +175,34 @@ mod `q = (p−1)/2` (the picture's "mod q").
   messages (commitment, T, responses); downlink = challenges, the pickled
   `M_G`, `A_c` and the out-of-bag labels.
 
+## Bounded-update enforcement
+
+After ZKP authentication and before aggregation (pipeline Stage 1.6), the server checks every
+client update against a public bound (`fedrf_diff/bounds.py`). An update outside the bound is
+rejected for that round and never aggregated, just like an update that fails authentication.
+The check needs no secrets: it uses only the update and the public protocol parameters.
+
+Always checked: the shapes (`d_z` columns, the agreed number of landmark rows, one label per
+patient row), all values finite, labels in {0, 1}.
+
+With adaptive Gaussian DP (L2 clip C_t, sigma_t = noise_ratio * C_t), the server first checks the
+declared release parameters: sigma_t must equal noise_ratio * C_t, and C_t <= sqrt(n d_z).
+Then:
+- every landmark row satisfies ||p||_2 <= C_t;
+- the mean squared norm of the patient rows must stay below C_t^2 + d_z sigma_t^2 plus 8
+  standard deviations of that mean (per-row variance 2 d_z sigma^4 + 4 C^2 sigma^2).
+
+Outputs:
+- each round prints a "Bounded-update enforcement (per client)" table with the outcome, the
+  percentage of the bound used, the check time and the reason;
+- the end of the run prints a summary;
+- `outputs/run/bounds_log.csv` holds every check;
+- the history has an `n_out_of_bound` column;
+- the Global Server cost includes `bound_check_s`.
+
+To switch the check off for comparison, set `bounds.ENABLED = False` or call
+`run(..., bounds_enabled=False)`. Tests: `tests/test_bounds.py`.
+
 ## One round
 
 | Stage | Where | What |

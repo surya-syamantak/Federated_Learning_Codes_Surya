@@ -58,6 +58,18 @@ def ms(seconds):
     return 1000 * seconds
 
 
+def bound_columns(b):
+    """Transfer-table columns of the bounded-update check (n/a when the upload never reached it)."""
+    if b is None or not b["enabled"]:
+        return {"Bounded Update": "n/a", "Trees In Update": b["trees"] if b else 0,
+                "New Trees": b["new"] if b else 0, "Max Trees": None, "Max New Trees": None,
+                "Bound Used (%)": float("nan"), "Bound Check Time (ms)": 0.0, "Bound Reason": ""}
+    return {"Bounded Update": "Within bound" if b["within"] else "Out of bound",
+            "Trees In Update": b["trees"], "New Trees": b["new"], "Max Trees": b["max_trees"],
+            "Max New Trees": b["max_new"], "Bound Used (%)": b["used_pct"],
+            "Bound Check Time (ms)": b["check_s"] * 1000, "Bound Reason": b["reason"]}
+
+
 def build_federation(cfg, with_zkp=True):
     """Schema agreement, hospital clients, federated imputation, key registration."""
     schema = agree_schema()
@@ -133,6 +145,7 @@ def run_federation(cfg, dp_spec, rounds, with_zkp=True, verbose=True, stop_early
             trees, rejected = (server.receive(c.client_id, u["payload"], rnd, creators) if u["valid"]
                                else ([], [("<update>", "authentication failed")]))
             u["check"] = time.perf_counter() - t0
+            u["bound"] = server.last_bound if u["valid"] else None
             u["accepted"], u["rejected"] = len(trees), rejected
             valid_forests.append(trees)
         t0 = time.perf_counter()
@@ -193,7 +206,7 @@ def run_federation(cfg, dp_spec, rounds, with_zkp=True, verbose=True, stop_early
                                  "ZKP Proof Verification Time (ms)": ms(u["ver"])})
             transfer_rows.append({"Round": rnd, "Client": c.name, "Serialization Time (ms)": ms(u["ser"]),
                                   "Tree Validation Time (ms)": ms(u["check"]), "Trees Sent": u["n_trees"],
-                                  "Trees Accepted": u["accepted"],
+                                  "Trees Accepted": u["accepted"], **bound_columns(u["bound"]),
                                   "Rejections": "; ".join(f"{i}: {r}" for i, r in u["rejected"])})
             proof_bytes = u["proof"].size_bytes if with_zkp else 0
             cost_rows.append({"Round": rnd, "Client": c.name,
