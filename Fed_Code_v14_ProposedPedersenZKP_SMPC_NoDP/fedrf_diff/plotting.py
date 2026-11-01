@@ -110,9 +110,9 @@ def plot_convergence(history: pd.DataFrame, eps_z: float, eps_l: float, converge
                      path: Path) -> None:
     with plt.rc_context(STYLE):
         fig, axes = plt.subplots(1, 3, figsize=(DOUBLE_COLUMN, 2.4))
-        panels = [("delta_z", eps_z, r"Representation change $\Delta Z^{(t)}$", r"$\epsilon_Z$", False),
-                  ("delta_l", eps_l, r"Loss change $|\Delta L^{(t)}|$", r"$\epsilon_L$", False),
-                  ("L_avg", None, r"Validation loss $L_{\mathrm{avg}}^{(t)}$", None, False)]
+        panels = [("delta_z", eps_z, r"Representation change $\Delta Z^{(r)}$", r"$\epsilon_z$", False),
+                  ("delta_l", eps_l, r"Loss change $|\Delta L^{(r)}|$", r"$\epsilon_l$", False),
+                  ("L_glob", None, r"Validation loss $L_{\mathrm{glob}}^{(r)}$", None, False)]
         for ax, letter, (col, eps, title, eps_label, log) in zip(axes, "abc", panels):
             d = history[["round", col]].dropna()
             if log:
@@ -262,7 +262,7 @@ def plot_communication_cost(costs: pd.DataFrame, path: Path) -> None:
             _round_ticks(ax, costs["round"])
             spread = clients.groupby("round")[col].agg(lambda b: b.max() - b.min()).max()
             if spread < 0.05 * clients[col].max():  # all clients receive about the same
-                ax.text(0.5, 0.06, "Same for every client: dominated by the global model $M_G$",
+                ax.text(0.5, 0.06, "Same for every client: dominated by the global model $M_{\mathrm{glob}}$",
                         transform=ax.transAxes, ha="center", fontsize=7, color="#555555")
             _panel(ax, letter, f"{title} per round")
         fig.tight_layout()

@@ -19,29 +19,29 @@ python -m pytest            # unit and pipeline tests
 ## Algorithm
 
 1. **Initialisation (t = 0)**: each client trains `F_k^(0)` (25 trees) on its private data. `G^(0)` is empty and `q_k = 0`.
-2. **Client → server**: at the start of round t each client authenticates with the proposed Pedersen ZKP
-   (one interactive session, below) and uploads its complete forest `F_k^(t-1)` with its schema metadata. It sends
+2. **Client → server**: at the start of round r each client authenticates with the proposed Pedersen ZKP
+   (one interactive session, below) and uploads its complete forest `F_k^(r-1)` with its schema metadata. It sends
    no raw data and no latent encodings. The server drops the forest of a client that fails authentication.
 3. **Tree-level aggregation**: the server validates every tree (schema, classes, node references, splits, leaves,
    size and depth, provenance: a copy of a known tree must be identical, and only its creator may introduce a tree id).
-   It pools `U^(t) = ∪ T_k^(t-1)` and selects `G^(t) = SelectTrees(U^(t), A, B = 100)`. Policy `A = consensus`
+   It pools `U^(r) = ∪ T_k^(r-1)` and selects `G^(r) = SelectTrees(U^(r), A, B = 100)`. Policy `A = consensus`
    is a round-robin over creating clients that prefers the trees kept by the most client forests, newest first.
    The `client-balanced` and `newest` policies are also available.
-4. **Broadcast**: `G^(t)`, round t and the verified schema go to every client.
+4. **Broadcast**: `G^(r)`, round r and the verified schema go to every client.
 5. **Local refinement**: each client first selects its Random Forest hyperparameters with a stratified 5-fold
    grid search on its own training patients (`max_features` × `min_samples_leaf`, 12 settings, balanced accuracy).
    The cross-validation forests are never shared, so they cost no DP budget. This local model selection is the bulk of
    the round time, about 30 s per round on a 4-core machine; adjust `local_tuning` in `config.py` to change it.
-   The client then grows a supplementary forest `H_k^(t)` (25 trees) and builds
-   `F_k^(t) = CapOrPrune(TreePool(G^(t), H_k^(t)), B_k = 50)`. This keeps the trees with the highest balanced
+   The client then grows a supplementary forest `H_k^(r)` (25 trees) and builds
+   `F_k^(r) = CapOrPrune(TreePool(G^(r), H_k^(r)), B_k = 50)`. This keeps the trees with the highest balanced
    accuracy on the client's training patients that each tree did not train on: out-of-bag patients for its own
    trees, all training patients for foreign trees. Validation data is never used for pruning.
 6. **Three-part convergence test** (each client, on its fixed validation split):
    relative log-loss change `≤ τ_loss = 0.05`, share of changed predictions `≤ τ_pred = 0.05`, and share of
-   predictions where `F_k^(t)` and `G^(t)` disagree `≤ τ_agree = 0.15`. All pass → `q_k += 1`, otherwise `q_k = 0`.
+   predictions where `F_k^(r)` and `G^(r)` disagree `≤ τ_agree = 0.15`. All pass → `q_k += 1`, otherwise `q_k = 0`.
    The client sends only `b_k = [q_k ≥ P = 3]`.
 7. **Stopping**: the server tallies the flags. If every client reports True it stops with "all-client convergence";
-   at `t = R_max = 50` it stops with "maximum rounds reached". It returns `G^(t)` and every `F_k^(t)`.
+   at `t = R_max = 50` it stops with "maximum rounds reached". It returns `G^(r)` and every `F_k^(r)`.
 
 Each newly grown tree gets Laplace DP on its leaf vectors (`b = 2C/ε`, `C = 1`, `ε ~ U[2, 3]` per round).
 All parameters are in `fedrf_diff/config.py`.
@@ -52,21 +52,21 @@ In the protocol itself, no validation metric reaches the server.
 ## Proposed ZKP (client authentication)
 
 `fedrf_diff/zkp.py` is FedRF-Diff v12's proposed ZKP: the same protocol, group (2048-bit p, 256-bit q, from the
-public seed "FedRF-Diff Pedersen ZKP group") and code; only λ is read from `config.py` (`zkp_lambda = 2`).
+public seed "FedRF-Diff Pedersen ZKP group") and code; only β is read from `config.py` (`zkp_lambda = 2`).
 One session per client and round:
 
 | Step | Direction | What |
 |---|---|---|
-| 1 | client → server | Pedersen commitment `C_t = g^{v_t} h^{r_t} (C_{t-1})^λ`, `C_0 = 1` (no registration) |
-| 2 | client → server | fresh random `k, τ`; `T = g^k h^τ` |
-| 3 | server → client | fresh random challenge `c` |
-| 4 | client → server | `r_v = k + c·v_t`, `r_s = τ + c·r_t` (mod q) |
-| – | server | checks `g^{r_v} h^{r_s} = T · (C_base)^c` with `C_base = C_t / (C_{t-1})^λ` |
+| 1 | client → server | Pedersen commitment `C_r = g^{v_r} h^{ρ_r} (C_{r-1})^β`, `C_0 = 1` (no registration) |
+| 2 | client → server | fresh random `w, η`; `T = g^w h^η` |
+| 3 | server → client | fresh random challenge `e` |
+| 4 | client → server | `y_v = w + e·v_r`, `y_s = η + e·ρ_r` (mod q) |
+| – | server | checks `g^{y_v} h^{y_s} = T · (C_base)^e` with `C_base = C_r / (C_{r-1})^β` |
 | 5 / 6 | server → client | Authentication Successful (forest accepted) / Authentication Failed (forest dropped) |
 
-`v_t = SHA-256(key ‖ client ‖ t) mod q` from a secret key that never leaves the client. `C_{t-1}` is the last
-successfully authenticated commitment; client and server both move on to `C_t` only after a success.
-Each session sends `C_t`, `T` (256 B each) and `r_v`, `r_s` (32 B each) up and `c` (32 B) plus the verdict (1 B)
+`v_r = SHA-256(key ‖ client ‖ r) mod q` from a secret key that never leaves the client. `C_{r-1}` is the last
+successfully authenticated commitment; client and server both move on to `C_r` only after a success.
+Each session sends `C_r`, `T` (256 B each) and `y_v`, `y_s` (32 B each) up and `e` (32 B) plus the verdict (1 B)
 down; both are counted in `communication_computation_cost.csv`. The forest travels with the responses and the
 global forest with the verdict, so the ZKP adds one round trip per round (the convergence flag is the other).
 
@@ -76,12 +76,12 @@ What changed from `Federated-Learning`:
 |---|---|---|
 | ZKP | Okamoto proof for a registered key `Y_k = g_1^{x_1} g_2^{x_2}`, Fiat–Shamir | proposed chained commitment, server-sent challenge |
 | Registration | `Y_k` registered once | none (`C_0 = 1`) |
-| Messages per session | 1 up (T, s_1, s_2) | C_t and T up, c down, r_v and r_s up, verdict down |
+| Messages per session | 1 up (T, s_1, s_2) | C_r and T up, e down, y_v and y_s up, verdict down |
 | Bound to the update | yes (hash of the forest in the challenge) | no: authenticates the client only, as in the diagram; the forest is checked by the server's structural validation |
-| λ | number of generators | weight of `C_{t-1}` |
+| β | number of generators | weight of `C_{r-1}` |
 
-`run_federation(..., impersonate={t: "client_k"})` makes an impostor replay client k's previous session in
-round t; the fresh challenge makes it fail and its forest is not aggregated (tested). The ZKP changes no learned
+`run_federation(..., impersonate={t: "client_k"})` makes an impostor replay client w's previous session in
+round r; the fresh challenge makes it fail and its forest is not aggregated (tested). The ZKP changes no learned
 value (tested: same metrics with and without the ZKP), so the learning results equal `Federated-Learning`'s.
 
 ## Data
@@ -99,8 +99,8 @@ Statlog is Cleveland Clinic data, so it joins the Cleveland client, and its copi
 
 ## Outputs (`outputs/run/`)
 
-`validation_metrics.csv` (G^(t) per client and Global Server), `local_tuning.csv` (selected hyperparameters, CV score and tuning time), `local_convergence.csv` (the three tests, q_k, b_k
-and F_k^(t) metrics), `rounds.csv` (|U|, |G|, flags, decision, DP budget), `zkp_times.csv`, `tree_transfer_times.csv`,
+`validation_metrics.csv` (G^(r) per client and Global Server), `local_tuning.csv` (selected hyperparameters, CV score and tuning time), `local_convergence.csv` (the three tests, q_k, b_k
+and F_k^(r) metrics), `rounds.csv` (|U|, |G|, flags, decision, DP budget), `zkp_times.csv`, `tree_transfer_times.csv`,
 `communication_computation_cost.csv`, `dp_budget_accuracy.csv`, `console_output.txt`, and `forests/`
 (the returned G and every F_k as explicit trees). The figures are `convergence`, `zkp_times`, `computation_cost`,
 `communication_cost` and `accuracy_vs_dp_budget`.
@@ -117,7 +117,7 @@ uploaded forest against two public bounds derived from the configuration (`serve
   is the client's last accepted round.
 
 An upload outside either bound is rejected as a whole: none of its trees enter the candidate
-pool U^(t), and none of its new tree ids are registered.
+pool U^(r), and none of its new tree ids are registered.
 
 Each round prints a "Bounded-update enforcement (per client)" table, and the run summary adds a
 "Bounded-update enforcement summary". The checks are also saved as extra columns in

@@ -6,7 +6,7 @@
 
 Inputs are each version's saved run (outputs/run/zkp_times.csv, costs.csv,
 config.json; produce them with ``python -m fedrf_diff`` in each folder). The
-three runs share the seed, data split, DP budgets (epsilon_t ~ U[2, 3]) and
+three runs share the seed, data split, DP budgets (epsilon_r ~ U[2, 3]) and
 number of rounds, so they do the same learning work and differ only in the ZKP.
 
 Outputs (``--out``, default ZKP_Comparison/outputs):
@@ -27,7 +27,7 @@ process); it is modelled from the bytes each version sends:
 with --rtt-ms, --uplink-mbps and --downlink-mbps. The ZKP needs one round
 trip in v10 and v11 (non-interactive: proof up, verdict down) and two in v12
 (commitment and T up, challenge down, responses up, verdict down). The
-learning messages (latents up; M_G, A_c and labels down) take LEARNING_ROUND_TRIPS.
+learning messages (latents up; M_glob, R_k and labels down) take LEARNING_ROUND_TRIPS.
 
 Timing in the saved runs comes from three separate runs, so it includes some
 run-to-run noise. The benchmark (on by default) therefore also times the three
@@ -63,7 +63,7 @@ ROOT = HERE.parent
 GLOBAL = "Global Server"
 ALL = "All clients"
 MS = 1000.0
-LEARNING_ROUND_TRIPS = 2  # latents + labels up / M_G, A_c, pseudo-labels down; metrics up / ack
+LEARNING_ROUND_TRIPS = 2  # latents + labels up / M_glob, R_k, pseudo-labels down; metrics up / ack
 
 
 @dataclass(frozen=True)
@@ -323,7 +323,7 @@ def benchmark(root: Path, runs: list[Run], rounds: int, seed: int = 42) -> pd.Da
     """Time the three ZKP implementations in one process, interleaved round by round.
 
     Each client's update has the same shape as in the saved runs (latent
-    matrix of ``vectors`` x d_z float64 rows and n_train int labels).
+    matrix of ``vectors`` x d float64 rows and n_train int labels).
     """
     modules = {r.version.key: _load_zkp_module(root, r.version) for r in runs}
     ref = runs[0]
@@ -696,7 +696,7 @@ def main(argv: list[str] | None = None) -> None:
     summary.to_csv(a.out / "comparison_summary.csv", index=False)
     to_latex(summary, a.out / "comparison_summary.tex",
              "ZKP comparison of the three FedRF-Diff versions (seed 42, 30 rounds, 4 clients, "
-             r"$\varepsilon_t \sim U[2,3]$). Times in ms per client and round.")
+             r"$\varepsilon_r \sim U[2,3]$). Times in ms per client and round.")
 
     fmt = lambda v: f"{v:.4f}"  # noqa: E731
     print("\n=== ZKP times (ms), all clients over all rounds (saved runs) ===")

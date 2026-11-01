@@ -2,30 +2,30 @@ Projects:
   v12: Fed_Code_v12_ProposedPedersenZKP_LaplaceDP_eps2-3 | 30 rounds | validation patients Hungary 53, Switzerland 22, VA Long Beach 36, Cleveland 103
   FL: Federated-Learning_ProposedZKP | 30 rounds | validation patients Hungary 59, Switzerland 25, VA Long Beach 40, Cleveland 61
 ZKP (read from each project's zkp.py): the same proposed Pedersen ZKP in both projects
-  v12: {'chained commitment C_t (C_{t-1})^lambda': True, 'server-sent challenge': True, 'Fiat-Shamir': False, 'group seed': '"FedRF-Diff Pedersen ZKP group"'}
-  FL: {'chained commitment C_t (C_{t-1})^lambda': True, 'server-sent challenge': True, 'Fiat-Shamir': False, 'group seed': '"FedRF-Diff Pedersen ZKP group"'}
+  v12: {'chained commitment C_r (C_{r-1})^beta': True, 'server-sent challenge': True, 'Fiat-Shamir': False, 'group seed': '"FedRF-Diff Pedersen ZKP group"'}
+  FL: {'chained commitment C_r (C_{r-1})^beta': True, 'server-sent challenge': True, 'Fiat-Shamir': False, 'group seed': '"FedRF-Diff Pedersen ZKP group"'}
 
 === Computation per round, averaged over the rounds (s): each client and the Global Server ===
 Project                    v12  v12 min  v12 max      FL  FL min  FL max  FL / v12
 Entity                                                                            
-Client 1(Hungary)       0.7745   0.6633   1.0800 13.5678  4.9844 18.5113   17.5182
-Client 2(Switzerland)   0.5446   0.4833   0.6735 12.6608  4.6528 16.7918   23.2460
-Client 3(VA Long Beach) 0.6324   0.5447   0.7964 13.2707  4.4158 18.1165   20.9845
-Client 4(Cleveland)     1.4811   1.2442   1.7168 13.2677  4.8892 20.1799    8.9582
-Global Server           0.3633   0.3168   0.5126  0.1186  0.0418  0.2228    0.3266
+Client 1(Hungary)       2.4503   1.9812   5.2729 12.1797  9.9071 16.1670    4.9707
+Client 2(Switzerland)   1.8503   1.4497   4.1440 11.2013  9.3806 13.6567    6.0537
+Client 3(VA Long Beach) 2.1317   1.6853   4.2537 11.8200  9.5921 14.9532    5.5448
+Client 4(Cleveland)     4.5399   3.8890   9.0308 12.5406 10.3395 16.7879    2.7623
+Global Server           1.0511   0.9066   2.4098  0.1109  0.0721  0.2106    0.1055
 
 Computation by category (mean per round, s):
 Client side (mean over the 4 clients):
                                   v12      FL
-Encoding / serialization       0.2952  0.0079
-ZKP proof generation           0.0003  0.0028
-Local model update             0.4939 13.1766
-Evaluation / convergence check 0.0688  0.0045
+Encoding / serialization       0.9281  0.0077
+ZKP proof generation           0.0010  0.0020
+Local model update             1.5282 11.9204
+Evaluation / convergence check 0.2857  0.0053
 Server side:
                           v12     FL
-Aggregation / learning 0.3576 0.0027
-Update validation      0.0000 0.0914
-ZKP proof verification 0.0057 0.0245
+Aggregation / learning 1.0324 0.0027
+Update validation      0.0000 0.0848
+ZKP proof verification 0.0187 0.0234
 
 === Communication per round, averaged over the rounds (RTT 50 ms, up 20 Mbit/s, down 50 Mbit/s; round trips v12 4, FL 3) ===
                                  Sent mean (KB)  Received mean (KB)  Total mean (KB)  Time mean (ms)  Time min (ms)  Time max (ms)  Data over the run (MB)

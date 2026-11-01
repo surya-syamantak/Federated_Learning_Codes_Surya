@@ -10,7 +10,7 @@ wrote (history.csv, zkp_times.csv, costs.csv, dp_budget_sweep.csv,
 config.json). Each figure is saved as a 600-dpi PNG and a vector PDF in
 <run-dir>/figures/:
 
-    convergence.png            Delta Z, |Delta L| and L_avg per round
+    convergence.png            Delta Z, |Delta L| and L_glob per round
     zkp_times.png              ZKP authentication, proof generation and
                                proof verification time per client per round
     accuracy_vs_dp_budget.png  accuracy per client vs the DP budget

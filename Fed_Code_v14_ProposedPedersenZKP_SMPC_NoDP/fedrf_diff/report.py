@@ -1,7 +1,7 @@
 """Terminal reports: per-round ZKP, SMPC, encoding and decoding times and metrics,
 averages and the ZKP / SMPC / encoding-decoding time analyses.
 
-"Global Server" is the global model M_G scored on all clients' validation
+"Global Server" is the global model M_glob scored on all clients' validation
 patients together, from the TP/FP/TN/FN totals the server reconstructs by SMPC
 secure aggregation (the "All clients (pooled)" row of final_metrics.csv). The
 per-client metrics are the evaluation harness: computed on each client and
@@ -84,7 +84,7 @@ def smpc_round_text(agg) -> str:
     table = pd.DataFrame(rows).to_string(index=False, float_format=lambda v: f"{v:.4f}")
     t = agg.totals
     return (table + f"\n  Server: reconstruction {agg.reconstruct_s * MS:.4f} ms; learned only the totals "
-            f"sum n_c L_c = {t['loss_x_n_train']:.4f}, TP = {t['tp']}, FP = {t['fp']}, TN = {t['tn']}, "
+            f"sum N_k L_k = {t['loss_x_n_train']:.4f}, TP = {t['tp']}, FP = {t['fp']}, TN = {t['tn']}, "
             f"FN = {t['fn']} (no client's own loss or counts)")
 
 
@@ -135,7 +135,7 @@ def format_round(t: int, sessions: dict, final_metrics: pd.DataFrame | None, row
     out += ["", f"Validation metrics of the global model after round {t} (clients: evaluation harness; "
             "Global Server: SMPC totals):", metrics_text(clients_and_global(final_metrics))]
     out.append(f"Server: Delta Z = {_fmt(row['delta_z'])} (threshold {eps_z:.3f}) | "
-               f"L_avg = {row['L_avg']:.4f} | Delta L = {_fmt(row['delta_l'])} | "
+               f"L_glob = {row['L_glob']:.4f} | Delta L = {_fmt(row['delta_l'])} | "
                f"patience {row['patience']}/{patience} | round time {row['round_seconds']:.1f} s")
     return "\n".join(out)
 

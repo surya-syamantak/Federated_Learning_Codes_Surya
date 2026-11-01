@@ -64,7 +64,7 @@ and the stopping thresholds. Then, for every round:
 * **validation metrics** of that round's global model for each client and
   for the Global Server: *Accuracy, Precision, Recall, Specificity, F1 Score,
   Matthews Correlation Coefficient (MCC), Cohen's Kappa*;
-* the server line: ΔZ (and its threshold), `L_avg`, ΔL, patience, round
+* the server line: ΔZ (and its threshold), `L_glob`, ΔL, patience, round
   time and the DP budget spent so far.
 
 After convergence:
@@ -74,7 +74,7 @@ After convergence:
   times per client, and how many proofs were valid;
 * the accuracy-vs-DP-budget tables (mean over the rounds and final round).
 
-"Global Server" is the global model `M_G` scored on all clients' validation
+"Global Server" is the global model `M_glob` scored on all clients' validation
 patients together (summed TP/FP/TN/FN). Clients only report their loss and
 TP/FP/TN/FN counts; every metric is computed from those counts.
 
@@ -83,9 +83,9 @@ TP/FP/TN/FN counts; every metric is computed from those counts.
 | File | Content |
 |---|---|
 | `config.json` | the settings used, including `privacy` and `zkp` |
-| `history.csv` | per round: ΔZ, `L_avg`, ΔL, timings, DP budget spent, and per client (and pooled, `[all]`) loss and the seven metrics |
+| `history.csv` | per round: ΔZ, `L_glob`, ΔL, timings, DP budget spent, and per client (and pooled, `[all]`) loss and the seven metrics |
 | `final_metrics.csv` | last round's metrics per client, pooled row and macro average |
-| `global_server_metrics.csv` | per round: the Global Server's TP/FP/TN/FN, log-loss, seven metrics, `L_avg`, ΔZ, ΔL, ε spent |
+| `global_server_metrics.csv` | per round: the Global Server's TP/FP/TN/FN, log-loss, seven metrics, `L_glob`, ΔZ, ΔL, ε spent |
 | `zkp_times.csv` | per round and client: authenticated, vectors, the three ZKP times, ZKP bytes up/down |
 | `costs.csv` | per round and client (and Global Server): computation time and its parts, bytes sent and received, ε spent |
 | `dp_budget_sweep.csv` | per per-round ε (and no DP): Laplace scale b, ε spent, mean accuracy over the rounds and final-round accuracy per client and pooled |
@@ -95,7 +95,7 @@ colour-blind-safe palette with a distinct marker per client):
 
 | Figure | Panels |
 |---|---|
-| `convergence.png` | (a) ΔZ with its threshold, (b) \|ΔL\| with ε_L, (c) `L_avg`; converged round marked |
+| `convergence.png` | (a) ΔZ with its threshold, (b) \|ΔL\| with ϵ_l, (c) `L_glob`; converged round marked |
 | `zkp_times.png` | (a) authentication, (b) proof generation, (c) proof verification time per client per round (grouped bars) |
 | `accuracy_vs_dp_budget.png` | (a) accuracy (mean over the rounds) vs per-round ε, incl. no DP; (b) accuracy per round vs cumulative ε spent in the main run (both grouped bars) |
 | `computation_cost.png` | (a) computation time per round per client and server, (b) mean per-client breakdown (ZKP proof generation in ms under each client), (c) mean ZKP proof generation time per client (ms) |
@@ -117,8 +117,8 @@ a client sends, every round:
 2. noise: `z̃_i = z_i + Lap(0, b)` on every coordinate, `b = Δ₁ / ε`.
 
 By default (`EPSILON = "random"`) the main run (the one that uses the ZKP)
-draws a new ε_t uniformly from `RANDOM_RANGE` = [2, 3] every round. The draw
-comes from the run seed, so it is reproducible, and the total is ε_1 + … + ε_t.
+draws a new ε_r uniformly from `RANDOM_RANGE` = [2, 3] every round. The draw
+comes from the run seed, so it is reproducible, and the total is ε_1 + … + ε_r.
 With a fixed ε = 5 instead, the Laplace scale is b = 2C/ε = 0.4 (noise std
 0.57) and each release is (5, 0)-DP (pure DP, no δ). Rounds add up, so after t
 rounds each vector has spent 5t. The terminal shows the per-round ε and the
@@ -126,8 +126,8 @@ running total every round. The settings:
 
 ```python
 EPSILON_RANGE = (1.0, 5.0)  # every budget used must lie here
-RANDOM_RANGE = (2.0, 3.0)    # ε_t ~ U(RANDOM_RANGE) each round when EPSILON = "random"
-EPSILON = "random" # per-round budget (a number, or "random": new ε_t each round)
+RANDOM_RANGE = (2.0, 3.0)    # ε_r ~ U(RANDOM_RANGE) each round when EPSILON = "random"
+EPSILON = "random" # per-round budget (a number, or "random": new ε_r each round)
 CLIP_NORM = 1.0    # C, L1 bound (sensitivity 2C)
 NOISE_ON_VALIDATION = False   # validation embeddings never leave the client
 NOISE_ON_LANDMARKS = False    # landmarks embed the public cohort: clipped, not noised
@@ -136,33 +136,33 @@ EPSILON_SWEEP = (1.0, 2.0, 3.0, 4.0, 5.0, None)   # None = no-DP reference
 
 Scope of the guarantee: it is per transmitted vector (local DP on what
 leaves the client). It does not cover the training labels, which the server
-needs to train `M_G`, nor the influence one patient has on other patients'
+needs to train `M_glob`, nor the influence one patient has on other patients'
 vectors through the shared kernel.
 
 **Stopping under DP.** The noise level is public, so the server subtracts its
-expected energy from ΔZ, and the ΔZ threshold is `ε_Z + std/C`
+expected energy from ΔZ, and the ΔZ threshold is `ϵ_z + std/C`
 (0.15 + 0.566 = 0.72 at ε = 5). When the noise is as large as the signal the
 corrected ΔZ could explode, so its denominator never drops below the signal
-energy measured on the noise-free public landmark rows. ε_L = 0.02,
+energy measured on the noise-free public landmark rows. ϵ_l = 0.02,
 patience 3. A run with ε outside [1, 5] stops with an error
 (`privacy.check_epsilon`).
 
 ## Schnorr ZKP
 
 `fedrf_diff/zkp.py` implements the "Schnorr-based Zero-Knowledge Proof (ZKP)
-in Federated Learning" protocol once per client and round. The update u_c is
+in Federated Learning" protocol once per client and round. The update u_k is
 everything the client sends: its DP-protected latent matrix (patient and
 landmark rows) and its training labels.
 
 | Step | Who | What | Code |
 |---|---|---|---|
-| 1 | client | local training → update u_c (SHA-256 of the update, mod q) | `encode_update` |
-| 2 | client | random r_c ∈ Z_q | `prove` |
-| 3 | client | commitment R_c = g^{r_c} mod p | `prove` |
-| 4 | client | proof s_c = r_c + e·u_c mod q; send (R_c, s_c) | `prove` |
-| 1 | server | receive (R_c, s_c) and the update; recompute u_c | `authenticate` |
-| 2 | server | challenge e = H(R_c ‖ u_c ‖ context) mod q | `challenge` |
-| 3 | server | check g^{s_c} = R_c · (g^{u_c})^e mod p: valid → accept the update for aggregation; invalid → reject it this round | `verify` |
+| 1 | client | local training → update u_k (SHA-256 of the update, mod q) | `encode_update` |
+| 2 | client | random r_k ∈ Z_q | `prove` |
+| 3 | client | commitment R_k = g^{r_k} mod p | `prove` |
+| 4 | client | proof s_k = r_k + e·u_k mod q; send (R_k, s_k) | `prove` |
+| 1 | server | receive (R_k, s_k) and the update; recompute u_k | `authenticate` |
+| 2 | server | challenge e = H(R_k ‖ u_k ‖ context) mod q | `challenge` |
+| 3 | server | check g^{s_k} = R_k · (g^{u_k})^e mod p: valid → accept the update for aggregation; invalid → reject it this round | `verify` |
 
 p is the RFC 3526 2048-bit safe prime, q = (p − 1)/2 and g = 4 (generates the
 order-q subgroup). H = SHA-256; context = protocol name, client and round, so a
@@ -172,23 +172,23 @@ proof cannot be replayed for another client or round. Settings in `zkp.py`:
 Times: *proof generation* = client steps 1–4; *proof verification* = server
 steps 1–3; *authentication* = the whole session.
 
-What the proof guarantees: the server's check uses u_c computed from the update
+What the proof guarantees: the server's check uses u_k computed from the update
 it received, so an update changed after the proof was made fails (tests check
 this, and a replayed or forged proof). The protocol has no client secret key:
-anyone who knows u_c can make a valid proof for it, so it checks the update's
+anyone who knows u_k can make a valid proof for it, so it checks the update's
 integrity and freshness, not the sender's identity. A key pair registered per
-client (s_c = r_c + e·x_c with public key g^{x_c}) would add identity.
+client (s_k = r_k + e·x_k with public key g^{x_k}) would add identity.
 
 ## Costs
 
 * **Computation** (s per round): per client, RF kernel + diffusion map + DP,
   ZKP proof generation, validation, decoding + RF retraining; for the server,
-  alignment + aggregation + `M_G` training + stopping rule, plus ZKP proof
+  alignment + aggregation + `M_glob` training + stopping rule, plus ZKP proof
   verification.
 * **Communication** (bytes per round): uplink = latent matrix (float64),
   training labels (1 byte each), loss + TP/FP/TN/FN (24 bytes) and the ZKP
   messages (commitment, T, responses); downlink = challenges, the pickled
-  `M_G`, `A_c` and the out-of-bag labels.
+  `M_glob`, `R_k` and the out-of-bag labels.
 
 ## Bounded-update enforcement
 
@@ -197,13 +197,13 @@ client update against a public bound (`fedrf_diff/bounds.py`). An update outside
 rejected for that round and never aggregated, just like an update that fails authentication.
 The check needs no secrets: it uses only the update and the public protocol parameters.
 
-Always checked: the shapes (`d_z` columns, the agreed number of landmark rows, one label per
+Always checked: the shapes (`d` columns, the agreed number of landmark rows, one label per
 patient row), all values finite, labels in {0, 1}.
 
-With Laplace DP (L1 clip C, scale b = 2C/epsilon_t):
+With Laplace DP (L1 clip C, scale b = 2C/epsilon_r):
 - every landmark row is clipped but not noised, so ||p||_1 <= C exactly;
 - each patient row is a clipped row plus Laplace noise, so its expected squared norm is at most
-  C^2 + 2 b^2 d_z, with variance at most 20 b^4 d_z + 8 C^2 b^2.
+  C^2 + 2 b^2 d, with variance at most 20 b^4 d + 8 C^2 b^2.
 
 The mean over patient rows must stay below that expectation plus 8 standard deviations of the
 mean. An honest client stays far below this bound; an inflated or unclipped update does not.
@@ -223,11 +223,11 @@ To switch the check off for comparison, set `bounds.ENABLED = False` or call
 
 | Stage | Where | What |
 |---|---|---|
-| 1 | client | RF kernel of `RF_c^(t-1)` over its training rows + landmarks; diffusion map `Z_c = √n V Λ^τ` (constant eigenvector dropped); Laplace DP |
+| 1 | client | RF kernel of `RF_k^(r-1)` over its training rows + landmarks; diffusion map `Ψ_k = √N_tot U diag(μ)^γ` (constant eigenvector dropped); Laplace DP |
 | 1.5 | both | Schnorr proof on each client's update; an invalid proof means the update is rejected this round |
-| 2 | server | Procrustes `A_c` from landmark rows `P_c` to `P_ref`; `Z_G` = aligned rows of all clients; `M_G` = random forest on `Z_G` + out-of-bag labels `ŷ`; ΔZ |
-| 3 | client | validation loss `L_c`; k-NN decode of `Z̃_c A_c`; retrain `RF_c` on `D_train ∪ {(x̂, ŷ)}` |
-| 4 | server | `L_avg = Σ (n_c/Σn) L_c`, ΔL; stop after 3 consecutive rounds with ΔZ < threshold and ΔL < ε_L |
+| 2 | server | Procrustes `R_k` from landmark rows `P_k` to `P_ref`; `Z_glob` = aligned rows of all clients; `M_glob` = random forest on `Z_glob` + out-of-bag labels `ŷ`; ΔZ |
+| 3 | client | validation loss `L_k`; k-NN decode of `Z_k R_k`; retrain `RF_k` on `D_train ∪ {(x̂, ŷ)}` |
+| 4 | server | `L_glob = Σ (N_k/Σn) L_k`, ΔL; stop after 3 consecutive rounds with ΔZ < threshold and ΔL < ϵ_l |
 
 ## Results (seed 42, Laplace ε = 5 per round, 2048-bit group)
 

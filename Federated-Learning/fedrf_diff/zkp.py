@@ -12,11 +12,11 @@ Pedersen commitment Y_k = prod g_i^x_i mod p (lambda = 2 is the classic g^x h^r:
 blinding factor r).
 
 Proof for one update (non-interactive via Fiat-Shamir):
-    commit      k_i <- Z_q,  T = prod g_i^k_i
-    challenge   c = H(group, lambda, Y_k, T, SHA-256(update), context) mod q
+    commit      w_i <- Z_q,  T = prod g_i^w_i
+    challenge   e = H(group, lambda, Y_k, T, SHA-256(update), context) mod q
                 context = schema id | round | client id
-    respond     s_i = k_i + c * x_i mod q
-The server accepts iff prod g_i^s_i = T * Y_k^c (mod p).
+    respond     s_i = w_i + e * x_i mod q
+The server accepts iff prod g_i^s_i = T * Y_k^e (mod p).
 
 The modification of a plain Pedersen opening proof is the challenge: it binds the proof to the
 exact update bytes and to the schema, round and client id, so one proof authenticates one

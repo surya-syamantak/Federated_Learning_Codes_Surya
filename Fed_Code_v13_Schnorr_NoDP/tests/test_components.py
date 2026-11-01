@@ -135,7 +135,7 @@ def test_honest_proof_is_valid_and_follows_the_diagram(pp):
     assert 0 <= u < pp.q and u == zkp.encode_update(pp, Z.copy(), y.copy())
     ctx = zkp.context_for("Client 1(Hungary)", 3)
     R, s = zkp.prove(pp, u, ctx)
-    e = zkp.challenge(pp, R, u, ctx)  # e = H(R_c || u_c || context) mod q
+    e = zkp.challenge(pp, R, u, ctx)  # e = H(R_k || u_k || context) mod q
     assert pow(int(pp.g), int(s), int(pp.p)) == int(R) * pow(pow(int(pp.g), int(u), int(pp.p)), int(e), int(pp.p)) % int(pp.p)
     assert zkp.verify(pp, R, s, u, ctx)
     session = zkp.authenticate(pp, "Client 1(Hungary)", 3, (Z, y))

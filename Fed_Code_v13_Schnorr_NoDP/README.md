@@ -10,7 +10,7 @@ This is `Fed_Code_v10_Schnorr_LaplaceDP_eps5` with the Laplace DP removed:
 
 * `fedrf_diff/privacy.py` is gone; clients send their latent vectors exactly
   as computed (no clipping, no noise), on patient and landmark rows alike;
-* the stopping rule uses the plain ΔZ (no noise correction) with threshold ε_Z;
+* the stopping rule uses the plain ΔZ (no noise correction) with threshold ϵ_z;
 * the accuracy-vs-DP-budget sweep, its CSV and figure, and every ε column
   are removed;
 * the Schnorr ZKP, the learning code (RF kernel, diffusion map, alignment,
@@ -65,14 +65,14 @@ Then, for every round:
 * **validation metrics** of that round's global model for each client and
   for the Global Server: *Accuracy, Precision, Recall, Specificity, F1 Score,
   Matthews Correlation Coefficient (MCC), Cohen's Kappa*;
-* the server line: ΔZ (and its threshold), `L_avg`, ΔL, patience and round
+* the server line: ΔZ (and its threshold), `L_glob`, ΔL, patience and round
   time.
 
 After the last round: the metrics averaged over all rounds, the ZKP time
 analysis (min, max and mean per client) and the encoding/decoding time
 analysis.
 
-"Global Server" is the global model `M_G` scored on all clients' validation
+"Global Server" is the global model `M_glob` scored on all clients' validation
 patients together (summed TP/FP/TN/FN). Clients only report their loss and
 TP/FP/TN/FN counts; every metric is computed from those counts.
 
@@ -81,9 +81,9 @@ TP/FP/TN/FN counts; every metric is computed from those counts.
 | File | Content |
 |---|---|
 | `config.json` | the settings used, including `privacy` (`{"mechanism": "none"}`) and `zkp` |
-| `history.csv` | per round: ΔZ, `L_avg`, ΔL, timings, and per client (and pooled, `[all]`) loss and the seven metrics |
+| `history.csv` | per round: ΔZ, `L_glob`, ΔL, timings, and per client (and pooled, `[all]`) loss and the seven metrics |
 | `final_metrics.csv` | last round's metrics per client, pooled row and macro average |
-| `global_server_metrics.csv` | per round: the Global Server's TP/FP/TN/FN, log-loss, seven metrics, `L_avg`, ΔZ, ΔL |
+| `global_server_metrics.csv` | per round: the Global Server's TP/FP/TN/FN, log-loss, seven metrics, `L_glob`, ΔZ, ΔL |
 | `zkp_times.csv` | per round and client: authenticated, vectors, the three ZKP times, ZKP bytes up/down |
 | `costs.csv` | per round and client (and Global Server): computation time and its parts, bytes sent and received |
 
@@ -91,7 +91,7 @@ Figures (`figures/`, PNG at 600 dpi plus a vector PDF):
 
 | Figure | Panels |
 |---|---|
-| `convergence.png` | (a) ΔZ with ε_Z, (b) \|ΔL\| with ε_L, (c) `L_avg`; converged round marked |
+| `convergence.png` | (a) ΔZ with ϵ_z, (b) \|ΔL\| with ϵ_l, (c) `L_glob`; converged round marked |
 | `zkp_times.png` | (a) authentication, (b) proof generation, (c) proof verification time per client per round |
 | `computation_cost.png` | (a) computation time per round per client and server, (b) mean per-client breakdown, (c) mean ZKP proof generation time per client |
 | `communication_cost.png` | (a) uplink, (b) downlink KB per round per client |
@@ -99,25 +99,25 @@ Figures (`figures/`, PNG at 600 dpi plus a vector PDF):
 ## Schnorr ZKP
 
 `fedrf_diff/zkp.py` (unchanged from v10) runs the Schnorr-based ZKP once per
-client and round. The update u_c is everything the client sends: its latent
+client and round. The update u_k is everything the client sends: its latent
 matrix (patient and landmark rows) and its training labels.
 
 | Step | Who | What | Code |
 |---|---|---|---|
-| 1 | client | local training → update u_c (SHA-256 of the update, mod q) | `encode_update` |
-| 2 | client | random r_c ∈ Z_q | `prove` |
-| 3 | client | commitment R_c = g^{r_c} mod p | `prove` |
-| 4 | client | proof s_c = r_c + e·u_c mod q; send (R_c, s_c) | `prove` |
-| 1 | server | receive (R_c, s_c) and the update; recompute u_c | `authenticate` |
-| 2 | server | challenge e = H(R_c ‖ u_c ‖ context) mod q | `challenge` |
-| 3 | server | check g^{s_c} = R_c · (g^{u_c})^e mod p: valid → accept, invalid → reject this round | `verify` |
+| 1 | client | local training → update u_k (SHA-256 of the update, mod q) | `encode_update` |
+| 2 | client | random r_k ∈ Z_q | `prove` |
+| 3 | client | commitment R_k = g^{r_k} mod p | `prove` |
+| 4 | client | proof s_k = r_k + e·u_k mod q; send (R_k, s_k) | `prove` |
+| 1 | server | receive (R_k, s_k) and the update; recompute u_k | `authenticate` |
+| 2 | server | challenge e = H(R_k ‖ u_k ‖ context) mod q | `challenge` |
+| 3 | server | check g^{s_k} = R_k · (g^{u_k})^e mod p: valid → accept, invalid → reject this round | `verify` |
 
 p is the RFC 3526 2048-bit safe prime, q = (p − 1)/2 and g = 4. H = SHA-256;
 context = protocol name, client and round, so a proof cannot be replayed for
 another client or round. Settings in `zkp.py`: `ENABLED = True`,
 `GROUP = "modp2048"` ("test512" is fast but NOT secure).
 
-What the proof guarantees: the server's check uses u_c computed from the
+What the proof guarantees: the server's check uses u_k computed from the
 update it received, so an update changed after the proof was made fails. The
 protocol has no client secret key, so it checks the update's integrity and
 freshness, not the sender's identity.
@@ -125,7 +125,7 @@ freshness, not the sender's identity.
 ## Privacy without DP
 
 Without DP the latent vectors leave the client exactly as computed. They are
-low-dimensional (d_z = 4) diffusion coordinates, not raw features, but they
+low-dimensional (d = 4) diffusion coordinates, not raw features, but they
 are a deterministic function of the patients' data and carry no formal
 privacy guarantee. Use this version as the no-DP reference (accuracy upper
 bound, cost baseline) against the DP versions.
@@ -137,12 +137,12 @@ client update against a public bound (`fedrf_diff/bounds.py`). An update outside
 rejected for that round and never aggregated, just like an update that fails authentication.
 The check needs no secrets: it uses only the update and the public protocol parameters.
 
-Always checked: the shapes (`d_z` columns, the agreed number of landmark rows, one label per
+Always checked: the shapes (`d` columns, the agreed number of landmark rows, one label per
 patient row), all values finite, labels in {0, 1}.
 
-Without DP the update is the diffusion map Z = sqrt(n) V Lambda^tau, with orthonormal V and
+Without DP the update is the diffusion map Z = sqrt(N_tot) U diag(mu)^gamma, with orthonormal U and
 0 <= lambda <= 1. That gives two exact bounds over all n = patients + landmarks rows:
-every entry |z| <= sqrt(n), and ||Z||_F^2 <= n d_z.
+every entry |z| <= sqrt(N_tot), and ||Z||_F^2 <= N_tot d.
 
 Outputs:
 - each round prints a "Bounded-update enforcement (per client)" table with the outcome, the
@@ -159,17 +159,17 @@ To switch the check off for comparison, set `bounds.ENABLED = False` or call
 
 | Stage | Where | What |
 |---|---|---|
-| 1 | client | RF kernel of `RF_c^(t-1)` over its training rows + landmarks; diffusion map `Z_c = √n V Λ^τ` (constant eigenvector dropped); sent as is (no DP) |
+| 1 | client | RF kernel of `RF_k^(r-1)` over its training rows + landmarks; diffusion map `Ψ_k = √N_tot U diag(μ)^γ` (constant eigenvector dropped); sent as is (no DP) |
 | 1.5 | both | Schnorr proof on each client's update; an invalid proof means the update is rejected this round |
-| 2 | server | Procrustes `A_c` from landmark rows `P_c` to `P_ref`; `Z_G` = aligned rows of all clients; `M_G` = random forest on `Z_G` + out-of-bag labels `ŷ`; ΔZ |
-| 3 | client | validation loss `L_c`; k-NN decode of `Z_c A_c`; retrain `RF_c` on `D_train ∪ {(x̂, ŷ)}` |
-| 4 | server | `L_avg = Σ (n_c/Σn) L_c`, ΔL; stop after 3 consecutive rounds with ΔZ < ε_Z = 0.15 and ΔL < ε_L = 0.02 |
+| 2 | server | Procrustes `R_k` from landmark rows `P_k` to `P_ref`; `Z_glob` = aligned rows of all clients; `M_glob` = random forest on `Z_glob` + out-of-bag labels `ŷ`; ΔZ |
+| 3 | client | validation loss `L_k`; k-NN decode of `Ψ_k R_k`; retrain `RF_k` on `D_train ∪ {(x̂, ŷ)}` |
+| 4 | server | `L_glob = Σ (N_k/Σn) L_k`, ΔL; stop after 3 consecutive rounds with ΔZ < ϵ_z = 0.15 and ΔL < ϵ_l = 0.02 |
 
 ## Results (seed 42, no DP, 2048-bit group)
 
 Split: VA Long Beach 140/36, Cleveland 409/103. The full terminal output is
 in `outputs/run/run_log.txt`. **Converged at round 7** (ΔZ fell from 0.53 in
-round 2 to 0.09–0.12 from round 4, below ε_Z = 0.15, with ΔL < 0.02 for 3
+round 2 to 0.09–0.12 from round 4, below ϵ_z = 0.15, with ΔL < 0.02 for 3
 rounds). Schnorr ZKP: 28/28 proofs valid, no update rejected.
 
 Metrics averaged over the 7 rounds:
@@ -185,7 +185,7 @@ Metrics averaged over the 7 rounds:
 Mean ZKP times per client and round (ms): authentication 6.7–7.4, proof
 generation 2.7–3.4, proof verification 3.6–4.0.
 
-Compared with v10 (Laplace DP, ε_t ~ U[2, 3], same seed): without noise the
+Compared with v10 (Laplace DP, ε_r ~ U[2, 3], same seed): without noise the
 representation settles, so the run converges in 7 rounds instead of stopping
 at 30 rounds, and the Global Server's mean accuracy is 0.844 instead of 0.806.
 Switzerland (22 validation patients, one healthy) is the least stable client.

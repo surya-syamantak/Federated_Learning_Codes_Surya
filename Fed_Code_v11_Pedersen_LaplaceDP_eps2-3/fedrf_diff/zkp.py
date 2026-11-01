@@ -3,7 +3,7 @@
 Implements the "Pedersen-based Zero-Knowledge Proof (ZKP) in Federated
 Learning" protocol once per client and round. The client's update is
 everything it sends the server that round: its DP-protected latent matrix
-Z~_c (patient and landmark rows) and its training labels. The ZKP is used only
+Z_k (patient and landmark rows) and its training labels. The ZKP is used only
 to verify clients: a client whose proof is invalid has its update rejected for
 that round; the proof changes no learned value.
 
@@ -11,37 +11,37 @@ that round; the proof changes no learned value.
   subgroup, log_g(h) unknown to everyone.
 
   Client side - proof generation
-    1. local training -> update u_c (an integer in [0, B), B = 2^RANGE_BITS)
-    2. choose random r_c in Z_q
-    3. Pedersen commitment  C_c = g^{u_c} h^{r_c} mod p        (send C_c)
-    4. proof pi_c: knowledge of (u_c, r_c) with C_c = g^{u_c} h^{r_c}, and
-       0 <= u_c < B (Sigma-protocols made non-interactive with Fiat-Shamir)
-                                                              (send pi_c)
+    1. local training -> update u_k (an integer in [0, B), B = 2^RANGE_BITS)
+    2. choose random r_k in Z_q
+    3. Pedersen commitment  C_k = g^{u_k} h^{r_k} mod p        (send C_k)
+    4. proof pi_k: knowledge of (u_k, r_k) with C_k = g^{u_k} h^{r_k}, and
+       0 <= u_k < B (Sigma-protocols made non-interactive with Fiat-Shamir)
+                                                              (send pi_k)
 
   Server side - proof verification
-    1. receive (C_c, pi_c) and the update
+    1. receive (C_k, pi_k) and the update
     2. verify the Sigma-protocol equations:
-         * C_c = g^{u_c} h^{r_c} for some (u_c, r_c) the client knows,
-         * u_c is within the valid range 0 <= u_c < B,
-         * no sensitive data is revealed (u_c and r_c stay hidden)
+         * C_k = g^{u_k} h^{r_k} for some (u_k, r_k) the client knows,
+         * u_k is within the valid range 0 <= u_k < B,
+         * no sensitive data is revealed (u_k and r_k stay hidden)
        valid   -> accept the client's update, use it in the global aggregation
        invalid -> reject the client's update for this round
 
 Implementation choices the diagram leaves open:
 
-* Group: a 2048-bit prime p = k q + 1 with a 256-bit prime q (a Schnorr
+* Group: a 2048-bit prime p = κ q + 1 with a 256-bit prime q (a Schnorr
   group, like RFC 5114's 2048/256 groups). p, q, g and h are derived from the
   public string SEED with SHA-256 ("nothing up my sleeve"), so nobody knows
   log_g(h) and anyone can regenerate them (generate_group, setup).
-* u_c = the first RANGE_BITS bits of SHA-256 of the update's bytes (its
-  fingerprint), so 0 <= u_c < B = 2^RANGE_BITS.
+* u_k = the first RANGE_BITS bits of SHA-256 of the update's bytes (its
+  fingerprint), so 0 <= u_k < B = 2^RANGE_BITS.
 * Proof of knowledge of the opening (Okamoto's Sigma-protocol):
-  T = g^a h^b; z_u = a + e u_c, z_r = b + e r_c; check g^{z_u} h^{z_r} = T C_c^e.
-* Range proof (bit decomposition): u_c = sum_i 2^i b_i with a commitment
-  C_i = g^{b_i} h^{r_i} per bit and r_c = sum_i 2^i r_i, so by the
-  homomorphism prod_i C_i^{2^i} = C_c. Each C_i gets an OR-proof
-  (Cramer-Damgaard-Schoenmakers) that it commits to 0 or 1, so u_c < 2^RANGE_BITS.
-* Fiat-Shamir: one challenge e = H(context || SHA-256(update) || C_c || T ||
+  T = g^a h^b; z_u = a + e u_k, z_r = b + e r_k; check g^{z_u} h^{z_r} = T C_k^e.
+* Range proof (bit decomposition): u_k = sum_i 2^i b_i with a commitment
+  C_i = g^{b_i} h^{r_i} per bit and r_k = sum_i 2^i r_i, so by the
+  homomorphism prod_i C_i^{2^i} = C_k. Each C_i gets an OR-proof
+  (Cramer-Damgaard-Schoenmakers) that it commits to 0 or 1, so u_k < 2^RANGE_BITS.
+* Fiat-Shamir: one challenge e = H(context || SHA-256(update) || C_k || T ||
   all C_i, A_i0, A_i1) mod q, H = SHA-256. The context is the protocol name,
   client and round, so a proof cannot be replayed for another client or round;
   the update's hash binds the proof to the exact update the server received,
@@ -107,7 +107,7 @@ GROUPS = {"pedersen2048": (2048, 256), "test512": (512, 256)}
 # --- ZKP settings ----------------------------------------------------------
 ENABLED = True  # prove and verify every client's update every round
 GROUP = "pedersen2048"  # 2048-bit p, 256-bit q (secure); "test512" is fast but NOT secure
-RANGE_BITS = 64  # valid range of u_c: 0 <= u_c < B = 2^RANGE_BITS
+RANGE_BITS = 64  # valid range of u_k: 0 <= u_k < B = 2^RANGE_BITS
 PROTOCOL = "FedRF-Diff Pedersen ZKP"  # first part of the context in H
 SEED = "FedRF-Diff Pedersen ZKP group"  # public seed of p, q, g, h
 
@@ -135,7 +135,7 @@ def generate_group(p_bits: int, q_bits: int) -> tuple[int, int]:
     if q.bit_length() != q_bits:
         raise ValueError("q overflowed its bit length; change SEED")
     k = ((1 << (p_bits - 1)) + _expand(f"k{p_bits}", p_bits - 2)) // q + 1
-    k += k % 2  # k even, so p = k q + 1 is odd
+    k += k % 2  # κ even, so p = κ q + 1 is odd
     while True:
         p = k * q + 1
         if p.bit_length() != p_bits:
@@ -190,7 +190,7 @@ class FixedBase:
 
 @dataclass(frozen=True)
 class PublicParams:
-    p: int  # prime, p = k q + 1
+    p: int  # prime, p = κ q + 1
     q: int  # prime order of the subgroup generated by g and h
     g: int
     h: int  # second generator, log_g(h) unknown
@@ -252,7 +252,7 @@ def update_digest(*arrays: np.ndarray) -> bytes:
 
 
 def encode_update(*arrays: np.ndarray) -> int:
-    """u_c: the first RANGE_BITS bits of the update's SHA-256, so 0 <= u_c < 2^RANGE_BITS."""
+    """u_k: the first RANGE_BITS bits of the update's SHA-256, so 0 <= u_k < 2^RANGE_BITS."""
     return int.from_bytes(update_digest(*arrays), "big") >> (256 - RANGE_BITS)
 
 
@@ -261,7 +261,7 @@ def context_for(client_id: str, round_: int) -> str:
 
 
 def challenge(pp: PublicParams, context: str, digest: bytes, *elements: int) -> int:
-    """e = H(context || SHA-256(update) || C_c || T || C_i, A_i0, A_i1 ...) mod q."""
+    """e = H(context || SHA-256(update) || C_k || T || C_i, A_i0, A_i1 ...) mod q."""
     data = hashlib.sha256()
     data.update(context.encode("utf-8") + b"|" + digest)
     for x in elements:
@@ -284,7 +284,7 @@ class BitProof:
 
 @dataclass(frozen=True)
 class Proof:
-    """pi_c: knowledge of the opening of C_c, plus the range proof 0 <= u_c < B."""
+    """pi_k: knowledge of the opening of C_k, plus the range proof 0 <= u_k < B."""
 
     T: int
     z_u: int
@@ -304,11 +304,11 @@ def _invert(x: int, p: int) -> int:
 
 
 def prove(pp: PublicParams, u: int, r: int, C: int, digest: bytes, context: str) -> Proof:
-    """Client step 4: pi_c for C_c = g^u h^r with 0 <= u < 2^RANGE_BITS."""
+    """Client step 4: pi_k for C_k = g^u h^r with 0 <= u < 2^RANGE_BITS."""
     q, p = pp.q, pp.p
     if not 0 <= u < (1 << RANGE_BITS):
-        raise ValueError(f"u_c is outside the valid range [0, 2^{RANGE_BITS})")
-    # Bit blinding factors that add up (with weights 2^i) to r_c.
+        raise ValueError(f"u_k is outside the valid range [0, 2^{RANGE_BITS})")
+    # Bit blinding factors that add up (with weights 2^i) to r_k.
     r_bits = [_rand(pp) for _ in range(RANGE_BITS)]
     r_bits[0] = (r - sum((1 << i) * r_bits[i] for i in range(1, RANGE_BITS))) % q
     g_inv = _invert(pp.g, p)
@@ -339,7 +339,7 @@ def prove(pp: PublicParams, u: int, r: int, C: int, digest: bytes, context: str)
 
 
 def verify(pp: PublicParams, C: int, proof: Proof, digest: bytes, context: str) -> bool:
-    """Server step 2: the Sigma-protocol equations and the range of u_c."""
+    """Server step 2: the Sigma-protocol equations and the range of u_k."""
     q, p = pp.q, pp.p
     if len(proof.bits) != RANGE_BITS:
         return False
@@ -353,7 +353,7 @@ def verify(pp: PublicParams, C: int, proof: Proof, digest: bytes, context: str) 
         return False
     e = challenge(pp, context, digest, C, proof.T,
                   *(x for bp in proof.bits for x in (bp.C, bp.A0, bp.A1)))
-    # Knowledge of (u_c, r_c): g^{z_u} h^{z_r} == T C_c^e.
+    # Knowledge of (u_k, r_k): g^{z_u} h^{z_r} == T C_k^e.
     if pp.commit(proof.z_u, proof.z_r) != proof.T * _powmod(C, e, p) % p:
         return False
     # Range: every C_i commits to 0 or 1 ...
@@ -364,7 +364,7 @@ def verify(pp: PublicParams, C: int, proof: Proof, digest: bytes, context: str) 
             return False
         if pp.h_pow(bp.z1) != bp.A1 * _powmod(bp.C * g_inv % p, e1, p) % p:
             return False
-    # ... and prod_i C_i^{2^i} == C_c (homomorphism), so u_c = sum_i 2^i b_i < 2^RANGE_BITS.
+    # ... and prod_i C_i^{2^i} == C_k (homomorphism), so u_k = sum_i 2^i b_i < 2^RANGE_BITS.
     acc = _mpz(1)
     for bp in reversed(proof.bits):
         acc = acc * acc % p * bp.C % p
@@ -381,7 +381,7 @@ class Session:
     proof_generation_s: float  # client steps 1-4
     proof_verification_s: float  # server steps 1-2
     authentication_s: float  # whole session
-    bytes_up: int  # client -> server: C_c and pi_c
+    bytes_up: int  # client -> server: C_k and pi_k
     bytes_down: int  # server -> client: valid / invalid
 
     @property
@@ -401,12 +401,12 @@ def authenticate(pp: PublicParams, client_id: str, round_: int, update: tuple,
     t0 = time.perf_counter()
     # Client side.
     digest = update_digest(*update)
-    u = encode_update(*update)  # 1. update u_c
-    r = _rand(pp)  # 2. random r_c in Z_q
-    C = pp.commit(u, r)  # 3. C_c = g^{u_c} h^{r_c} mod p
-    proof = prove(pp, u, r, C, digest, context)  # 4. pi_c
+    u = encode_update(*update)  # 1. update u_k
+    r = _rand(pp)  # 2. random r_k in Z_q
+    C = pp.commit(u, r)  # 3. C_k = g^{u_k} h^{r_k} mod p
+    proof = prove(pp, u, r, C, digest, context)  # 4. pi_k
     t1 = time.perf_counter()
-    # Server side: 1. receive (C_c, pi_c) and the update; 2. verify.
+    # Server side: 1. receive (C_k, pi_k) and the update; 2. verify.
     ok = verify(pp, C, proof, update_digest(*received), context)
     t2 = time.perf_counter()
     return Session(authenticated=bool(ok), vectors=len(update[0]),

@@ -1,11 +1,11 @@
 """Step 6 · decentralized three-part convergence test, evaluated by every client on its own
 fixed validation patients D_k^val:
 
-    1  loss stability          |L_k^(t) - L_k^(t-1)| / (|L_k^(t-1)| + eps)          <= tau_loss
-    2  prediction stability    (1/|D_val|) sum_i 1[y_k^(t)(x_i) != y_k^(t-1)(x_i)]   <= tau_pred
-    3  global/local agreement  (1/|D_val|) sum_i 1[y_Fk^(t)(x_i) != y_G^(t)(x_i)]    <= tau_agree
+    1  loss stability          |L_k^(r) - L_k^(r-1)| / (|L_k^(r-1)| + eps)          <= tau_loss
+    2  prediction stability    (1/|D_val|) sum_i 1[y_k^(r)(x_i) != y_k^(r-1)(x_i)]   <= tau_pred
+    3  global/local agreement  (1/|D_val|) sum_i 1[y_Fk^(r)(x_i) != y_G^(r)(x_i)]    <= tau_agree
 
-All three pass: q_k = q_k + 1, otherwise q_k = 0. The client sends only b_k^(t) = [q_k >= P].
+All three pass: q_k = q_k + 1, otherwise q_k = 0. The client sends only b_k^(r) = [q_k >= P].
 L is the validation log-loss of the local model F_k; round 0 initialises L_k^(0) and y_k^(0)
 from the initial forest F_k^(0).
 """
@@ -52,7 +52,7 @@ class LocalConvergence:
     def update(self, loss, pred, global_pred):
         rel = abs(loss - self.prev_loss) / (abs(self.prev_loss) + self.eps)
         change = float(np.mean(pred != self.prev_pred))
-        disagree = 1.0 if global_pred is None else float(np.mean(pred != global_pred))  # no G^(t): no agreement
+        disagree = 1.0 if global_pred is None else float(np.mean(pred != global_pred))  # no G^(r): no agreement
         ok = (rel <= self.tau_loss, change <= self.tau_pred, disagree <= self.tau_agree)
         self.q = self.q + 1 if all(ok) else 0
         self.prev_loss, self.prev_pred = loss, pred

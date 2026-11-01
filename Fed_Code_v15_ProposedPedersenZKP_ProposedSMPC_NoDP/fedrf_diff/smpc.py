@@ -1,47 +1,47 @@
 """Stage 4: proposed SMPC - Adaptive Prime Secure Aggregation with Self-Randomized Pairwise Masking.
 
 The server needs only *totals* of what the clients report after the local
-evaluation (Stage 3): the weighted validation loss for L_avg and the summed
-TP/FP/TN/FN counts for the Global Server metrics. Every authenticated client c
+evaluation (Stage 3): the weighted validation loss for L_glob and the summed
+TP/FP/TN/FN counts for the Global Server metrics. Every authenticated client k
 holds the vector
 
-    x_c = (n_c * L_c, n_val_c * L_c, TP_c, FP_c, TN_c, FN_c)
+    v_k = (N_k * L_k, N_val,k * L_k, TP_k, FP_k, TN_k, FN_k)
 
-(n_c = training-set size, the weight of L_c in L_avg; n_val_c = validation
+(N_k = training-set size, the weight of L_k in L_glob; N_val,k = validation
 size) and sends the server only a masked copy of it; the masks cancel in the sum.
 
-  Phase 1 (one-time)  pairwise key setup: K_ij for every pair of clients
-  Phase 2 (one-time)  prime pool Pool = {p_0, ..., p_{k-1}} from a public seed;
-                      quantization scaling factor S_q fixed
-  Phase 3 (round t)   adaptive prime selection: idx_t = H(seed || t) mod k,
-                      p_t = Pool[idx_t]
-  Phase 4 (client i)  quantize: Q(x_i) = round(S_q * x_i)
-  Phase 5 (client i)  stream outputs: r_ij = PRG(K_ij, t, p_t) in Z_{p_t}^m for every
-                      other participant j (r_ij = r_ji: both ends compute the same stream)
-           self-mask  mask_i = sum_j sign(i, j) * r_ij,  sign(i, j) = +1 if i < j, -1 if i > j
-  Phase 6 (client i)  masked model: c_i = Q(x_i) + mask_i (mod p_t); send c_i to the server
-  Phase 7 (server)    secure aggregation: Agg = sum_i c_i (mod p_t) = sum_i Q(x_i) (mod p_t),
-                      because every r_ij enters once with + (at i < j) and once with -
-  Phase 8 (server)    dequantization: x_hat = Agg / S_q  (the totals; no client's own vector)
+  Phase 1 (one-time)  pairwise key setup: S_ij for every pair of clients
+  Phase 2 (one-time)  prime pool Pool = {p_0, ..., p_{|Pool|-1}} from a public seed;
+                      quantization scaling factor S_quant fixed
+  Phase 3 (round r)   adaptive prime selection: idx_r = H(seed || r) mod |Pool|,
+                      p_r = Pool[idx_r]
+  Phase 4 (client k)  quantize: Q(v_k) = round(S_quant * v_k)
+  Phase 5 (client k)  stream outputs: m_kj = PRG(S_ij, r, p_r) in Z_{p_r}^m for every
+                      other participant j (m_kj = m_jk: both ends compute the same stream)
+           self-mask  M_k = sum_j sign(k, j) * m_kj,  sign(k, j) = +1 if k < j, -1 if k > j
+  Phase 6 (client k)  masked model: y_k = Q(v_k) + M_k (mod p_r); send y_k to the server
+  Phase 7 (server)    secure aggregation: Σ_r = sum_k y_k (mod p_r) = sum_k Q(v_k) (mod p_r),
+                      because every m_kj enters once with + (at k < j) and once with -
+  Phase 8 (server)    dequantization: x_hat = Σ_r / S_quant  (the totals; no client's own vector)
 
 Implementation choices the diagram leaves open (made so that it is correct
 and secure on this data, not only on the toy numbers of the diagram):
 
-* Prime size. The aggregate must stay below p_t, or it wraps around mod p_t.
+* Prime size. The aggregate must stay below p_r, or it wraps around mod p_r.
   The pool holds POOL_SIZE primes of PRIME_BITS = 61 bits (the diagram's 997,
-  1009, 1013 cannot hold a sum of n_c * L_c ~ 330 at S_q = 10^6). Every client
-  checks |Q(x_i)| < p_t / (2 N) for each value, so the signed sum of N clients
+  1009, 1013 cannot hold a sum of N_k * L_k ~ 330 at S_quant = 10^6). Every client
+  checks |Q(v_k)| < p_r / (2 N) for each value, so the signed sum of N clients
   can neither wrap nor be confused with a negative number.
-* Quantization. S_q = 10^6 (fixed, as in the diagram, but finer than its 100):
-  L_avg keeps 6 decimals, ample for the stopping test Delta L < 0.02; counts
+* Quantization. S_quant = 10^6 (fixed, as in the diagram, but finer than its 100):
+  L_glob keeps 6 decimals, ample for the stopping test Delta L < 0.02; counts
   are integers and decode exactly.
-* Pairwise keys. Each client draws a secret scalar a_i and publishes
-  A_i = g^{a_i} (Diffie-Hellman in the ZKP's 2048-bit group, relayed by the
-  server); K_ij = SHA-256(A_i^{a_j} || i || j) for i < j. The server sees only
-  the public A_i, so it cannot recompute any mask (a key derived from a seed
+* Pairwise keys. Each client draws a secret scalar d_k and publishes
+  D_k = g^{d_k} (Diffie-Hellman in the ZKP's 2048-bit group, relayed by the
+  server); S_ij = SHA-256(D_k^{d_j} || i || j) for k < j. The server sees only
+  the public D_k, so it cannot recompute any mask (a key derived from a seed
   the server knows would let it unmask every client).
-* Fresh streams. r_ij is derived from K_ij, the round t and p_t (SHA-256 in
-  counter mode, 512 bits per element reduced mod p_t), so masks never repeat:
+* Fresh streams. m_kj is derived from S_ij, the round r and p_r (SHA-256 in
+  counter mode, 512 bits per element reduced mod p_r), so masks never repeat:
   subtracting two rounds' messages reveals nothing.
 * Participants and drop-outs (the diagram's note). The masks are built over
   the confirmed participant set: the clients that passed the ZKP this round,
@@ -51,10 +51,10 @@ and secure on this data, not only on the toy numbers of the diagram):
   aggregate is the exact sum over the survivors. The server must then discard
   any late message of a dropped client (a revealed pairwise term would unmask it).
 
-Security: each c_i is Q(x_i) plus pseudorandom terms keyed with secrets the
+Security: each y_k is Q(v_k) plus pseudorandom terms keyed with secrets the
 server does not have, so it reveals nothing beyond the final sum (honest-but-
-curious server; the masks of client i are known to its partners j, so a
-coalition of the server with all other clients learns x_i, as with any sum).
+curious server; the masks of client k are known to its partners j, so a
+coalition of the server with all other clients learns v_k, as with any sum).
 Not covered: the latent rows each client sends for the global model are not
 masked (the server trains its random forest on them) and, with no DP, they are
 sent as computed.
@@ -73,12 +73,12 @@ from . import zkp
 
 # --- SMPC settings -----------------------------------------------------------
 ENABLED = True  # secure aggregation of the losses and confusion counts every round
-POOL_SEED = "FedRF-Diff adaptive prime pool"  # public seed of the prime pool and of idx_t
+POOL_SEED = "FedRF-Diff adaptive prime pool"  # public seed of the prime pool and of idx_r
 POOL_SIZE = 3  # primes in the pool (the diagram's |Pool| = 3)
 PRIME_BITS = 61  # bit length of every pool prime
-SCALE = 10**6  # S_q, the quantization scaling factor
+SCALE = 10**6  # S_quant, the quantization scaling factor
 ELEMENT_BYTES = (PRIME_BITS + 7) // 8  # 8 bytes per masked value
-# The aggregated vector (every value is quantized with S_q; counts decode exactly).
+# The aggregated vector (every value is quantized with S_quant; counts decode exactly).
 FIELDS = ("loss_x_n_train", "loss_x_n_val", "tp", "fp", "tn", "fn")
 
 
@@ -86,7 +86,7 @@ def settings() -> dict:
     return {"enabled": ENABLED,
             "scheme": "adaptive prime secure aggregation with self-randomized pairwise masking",
             "pool_seed": POOL_SEED, "pool": [str(p) for p in prime_pool()], "prime_bits": PRIME_BITS,
-            "scale_S_q": SCALE, "key_agreement": "Diffie-Hellman in the ZKP group, K_ij = SHA-256",
+            "scale_S_q": SCALE, "key_agreement": "Diffie-Hellman in the ZKP group, S_ij = SHA-256",
             "fields": list(FIELDS)}
 
 
@@ -116,7 +116,7 @@ def prime_pool(seed: str = POOL_SEED, size: int = POOL_SIZE, bits: int = PRIME_B
 
 
 def select_prime(round_: int, pool: tuple[int, ...] | None = None, seed: str = POOL_SEED) -> tuple[int, int]:
-    """Phase 3: idx_t = H(seed || t) mod |Pool| and p_t = Pool[idx_t]."""
+    """Phase 3: idx_r = H(seed || r) mod |Pool| and p_r = Pool[idx_r]."""
     pool = prime_pool() if pool is None else pool
     idx = _hash_int(seed, "round", round_) % len(pool)
     return idx, pool[idx]
@@ -124,7 +124,7 @@ def select_prime(round_: int, pool: tuple[int, ...] | None = None, seed: str = P
 
 # --- Phase 4 and 8: quantization ------------------------------------------------------
 def quantize(value: float) -> int:
-    """Q(x) = round(S_q * x)."""
+    """Q(x) = round(S_quant * x)."""
     return round(value * SCALE)
 
 
@@ -136,12 +136,12 @@ def dequantize(element: int, p: int) -> float:
 
 # --- Phase 5: pairwise streams and self-mask ---------------------------------------
 def stream(key: bytes, round_: int, p: int, m: int) -> list[int]:
-    """r_ij: m pseudorandom elements of Z_p from K_ij, the round and the prime."""
+    """m_kj: m pseudorandom elements of Z_p from S_ij, the round and the prime."""
     return [_hash_int(key, "stream", round_, p, k, bits=512) % p for k in range(m)]
 
 
 def sign(i: int, j: int) -> int:
-    """+1 if i < j, -1 if i > j (client indices)."""
+    """+1 if k < j, -1 if k > j (client indices)."""
     return 1 if i < j else -1
 
 
@@ -152,7 +152,7 @@ class ClientCost:
 
     mask_s: float  # quantize + streams + self-mask + masked model
     recovery_s: float = 0.0  # dropout recovery (only if a participant dropped)
-    bytes_up: int = 0  # c_i (and recovery terms)
+    bytes_up: int = 0  # y_k (and recovery terms)
     bytes_down: int = 0
 
     @property
@@ -163,13 +163,13 @@ class ClientCost:
 @dataclass
 class Aggregation:
     round: int
-    prime: int  # p_t
-    prime_index: int  # idx_t
+    prime: int  # p_r
+    prime_index: int  # idx_r
     totals: dict[str, float]  # what the server learns: the sums of every field
     participants: list[str]
     dropped: list[str] = field(default_factory=list)
     clients: dict[str, ClientCost] = field(default_factory=dict)
-    masked: dict[str, list[int]] = field(default_factory=dict)  # c_i as the server receives them
+    masked: dict[str, list[int]] = field(default_factory=dict)  # y_k as the server receives them
     aggregate_s: float = 0.0  # server: sum, recovery, dequantization
 
 
@@ -178,7 +178,7 @@ class SecureAggregator:
 
     Phase 1 and 2 run once in the constructor; ``aggregate`` runs Phases 3-8 for one round.
     In a deployment each client holds only its own secret and keys; here one object
-    simulates all parties, and only c_i (and recovery terms) cross to the server side.
+    simulates all parties, and only y_k (and recovery terms) cross to the server side.
     """
 
     def __init__(self, clients: list[str], pp: zkp.PublicParams | None = None):
@@ -206,7 +206,7 @@ class SecureAggregator:
                 self._keys[(a, b)] = key
             self.setup_s[a] += time.perf_counter() - t0
         n = len(clients)
-        # Publish A_i (up), receive the other N - 1 public keys (down, relayed by the server).
+        # Publish D_k (up), receive the other N - 1 public keys (down, relayed by the server).
         self.setup_bytes_up = self.pp.p_bytes
         self.setup_bytes_down = (n - 1) * self.pp.p_bytes
 
@@ -243,7 +243,7 @@ class SecureAggregator:
             t0 = time.perf_counter()
             q = [quantize(v) for v in vectors[name]]
             if any(abs(v) >= limit for v in q):
-                raise OverflowError(f"{name}: a quantized value exceeds p_t / (2N); use larger primes")
+                raise OverflowError(f"{name}: a quantized value exceeds p_r / (2N); use larger primes")
             mask = self.mask(name, round_, p, participants, m)
             masked[name] = [(v + r) % p for v, r in zip(q, mask)]
             costs[name] = ClientCost(mask_s=time.perf_counter() - t0, bytes_up=m * ELEMENT_BYTES)

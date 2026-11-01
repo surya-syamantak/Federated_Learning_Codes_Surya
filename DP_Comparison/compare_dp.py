@@ -1,6 +1,6 @@
 """Compare FedRF-Diff with Laplace DP (v10) and without DP (v13): communication and computation.
 
-    v10  Fed_Code_v10_Schnorr_LaplaceDP_eps5   Schnorr ZKP + Laplace DP (epsilon_t ~ U[2, 3] per round)
+    v10  Fed_Code_v10_Schnorr_LaplaceDP_eps5   Schnorr ZKP + Laplace DP (epsilon_r ~ U[2, 3] per round)
     v13  Fed_Code_v13_Schnorr_NoDP             Schnorr ZKP, no differential privacy
 
 Both versions use the same seed, data split, learning settings and Schnorr ZKP;
@@ -11,11 +11,11 @@ with ``python -m fedrf_diff`` in each folder).
 Compared:
 
 * Communication: bytes per client and round, split into their parts
-  (latent matrix, labels, metrics, ZKP up; M_G, A_c, pseudo-labels, ZKP down),
+  (latent matrix, labels, metrics, ZKP up; M_glob, R_k, pseudo-labels, ZKP down),
   and the modelled communication time
       time = round trips x RTT + 8 x bytes_up / uplink + 8 x bytes_down / downlink
   (--rtt-ms, --uplink-mbps, --downlink-mbps). One round needs 3 round trips in
-  both versions: latents + labels + ZKP proof up / verdict down, M_G, A_c and
+  both versions: latents + labels + ZKP proof up / verdict down, M_glob, R_k and
   labels down, metrics up. Reported per round and summed until each run
   stopped.
 * Computation: per round, every client's encoding (+ DP in v10), ZKP proof
@@ -64,7 +64,7 @@ ROOT = HERE.parent
 GLOBAL = "Global Server"
 MS = 1000.0
 FLOAT_BYTES, LABEL_BYTES, METRIC_BYTES = 8, 1, 8 + 4 * 4  # as in fedrf_diff/pipeline.py
-ROUND_TRIPS = 3  # (latents, labels, ZKP proof) / verdict; M_G, A_c, labels; metrics
+ROUND_TRIPS = 3  # (latents, labels, ZKP proof) / verdict; M_glob, R_k, labels; metrics
 
 
 @dataclass(frozen=True)
@@ -79,7 +79,7 @@ class Version:
 
 
 VERSIONS = (
-    Version("v10", r"Laplace DP, $\varepsilon_t \sim U[2, 3]$ (v10)", "Laplace DP\n(v10)", "Fed_Code_v10_Schnorr_LaplaceDP_eps5",
+    Version("v10", r"Laplace DP, $\varepsilon_r \sim U[2, 3]$ (v10)", "Laplace DP\n(v10)", "Fed_Code_v10_Schnorr_LaplaceDP_eps5",
             "#D55E00", "////", "s"),
     Version("v13", "No DP (v13)", "No DP\n(v13)", "Fed_Code_v13_Schnorr_NoDP", "#0072B2", "", "o"),
 )
@@ -117,7 +117,7 @@ STYLE = {
 
 def plain(label: str) -> str:
     """Legend label without mathtext, for tables and the terminal."""
-    return label.replace(r"$\varepsilon_t \sim U[2, 3]$", "eps_t ~ U[2, 3]")
+    return label.replace(r"$\varepsilon_r \sim U[2, 3]$", "eps_r ~ U[2, 3]")
 
 
 # --- loading ---------------------------------------------------------------
@@ -312,8 +312,8 @@ MESSAGE_PARTS = (  # (partition, column, tick label)
     ("Uplink (client → server)", "up_metrics", "Loss +\nTP/FP/TN/FN"),
     ("Uplink (client → server)", "up_zkp", "ZKP\nproof"),
     ("Uplink (client → server)", "bytes_up", "Uplink\ntotal"),
-    ("Downlink (server → client)", "down_model", "Global\nmodel M_G"),
-    ("Downlink (server → client)", "down_alignment", "Alignment\nA_c"),
+    ("Downlink (server → client)", "down_model", "Global\nmodel M_glob"),
+    ("Downlink (server → client)", "down_alignment", "Alignment\nR_k"),
     ("Downlink (server → client)", "down_labels", "Pseudo-\nlabels"),
     ("Downlink (server → client)", "down_zkp", "ZKP\nverdict"),
     ("Downlink (server → client)", "bytes_down", "Downlink\ntotal"),
@@ -512,7 +512,7 @@ def fig_dp_overhead(bench: pd.DataFrame, comp_v10: pd.DataFrame, run_v10: Run, p
         ax.set_ylabel("DP share (%, log)")
         _panel(ax, "b", "DP overhead in v10")
         fig.text(0.5, -0.09, f"Benchmark of v10's Laplace mechanism on this machine: {bench['round'].nunique()} "
-                 f"rounds × {len(clients)} clients, " r"$\varepsilon_t \sim U[2, 3]$"
+                 f"rounds × {len(clients)} clients, " r"$\varepsilon_r \sim U[2, 3]$"
                  "; whiskers: min to max. Shares use v10's "
                  "saved run.", ha="center", fontsize=7.2, style="italic")
         fig.tight_layout()
@@ -599,7 +599,7 @@ def metrics_latex(table: pd.DataFrame, path: Path) -> None:
     sub = " & ".join(["DP & No DP"] * len(names))
     lines = [r"\begin{table*}[t]", r"\centering", r"\small",
              r"\caption{Validation metrics averaged over the rounds, with Laplace DP (v10, "
-             r"$\varepsilon_t\sim U[2,3]$, 30 rounds) and without DP (v13, 7 rounds), seed 42.}",
+             r"$\varepsilon_r\sim U[2,3]$, 30 rounds) and without DP (v13, 7 rounds), seed 42.}",
              r"\label{tab:dp_metrics}", r"\begin{tabular}{l" + "rr" * len(names) + "}", r"\toprule",
              "Client & " + head + r" \\", " & " + sub + r" \\", r"\midrule"]
     for c in clients:
@@ -712,7 +712,7 @@ def to_latex(table: pd.DataFrame, path: Path, caption: str) -> None:
     cols = list(t.columns)
     lines = [r"\begin{table}[t]", r"\centering", rf"\caption{{{caption}}}", r"\label{tab:dp_comparison}",
              r"\begin{tabular}{l" + "r" * len(cols) + "}", r"\toprule",
-             "Quantity & " + " & ".join(c.replace("eps_t ~ U[2, 3]", r"$\varepsilon_t\sim U[2,3]$") for c in cols)
+             "Quantity & " + " & ".join(c.replace("eps_r ~ U[2, 3]", r"$\varepsilon_r\sim U[2,3]$") for c in cols)
              + r" \\", r"\midrule"]
     for name, values in t.iterrows():
         cells = []

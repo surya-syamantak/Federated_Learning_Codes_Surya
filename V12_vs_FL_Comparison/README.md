@@ -8,10 +8,10 @@ sit next to this folder:
 | v12 | `Fed_Code_v12_ProposedPedersenZKP_LaplaceDP_eps2-3` | clients send DP-noised diffusion-map latents; server aligns them (Procrustes) and trains a global RF on the latents; clients decode and retrain |
 | FL | `Federated-Learning_ProposedZKP` | clients send whole random forests as explicit trees (Laplace DP on the leaf vectors); server selects a global forest tree by tree; clients tune, refine and run their own convergence test |
 
-Both use seed 42, 4 hospital clients, ε_t ~ U[2, 3] per round, 30 rounds and
+Both use seed 42, 4 hospital clients, ε_r ~ U[2, 3] per round, 30 rounds and
 **the same proposed Pedersen ZKP** for client authentication: the same
-`zkp.py`, group and λ = 2 (chained commitment `C_t = g^{v_t} h^{r_t} (C_{t-1})^λ`,
-server-sent challenge `c`, check `g^{r_v} h^{r_s} = T (C_t / C_{t-1}^λ)^c`). The
+`zkp.py`, group and β = 2 (chained commitment `C_r = g^{v_r} h^{ρ_r} (C_{r-1})^β`,
+server-sent challenge `e`, check `g^{y_v} h^{y_s} = T (C_r / C_{r-1}^β)^e`). The
 comparison therefore isolates the two learning designs. At start-up the script
 reads both projects' `zkp.py` and prints whether they implement the same
 protocol (it would flag the original `Federated-Learning`, whose ZKP is an
@@ -44,7 +44,7 @@ categories.
 | Client: ZKP proof generation | proof generation | proof generation |
 | Client: local model update | decoding + RF retraining | local tuning (5-fold CV grid search) + refinement |
 | Client: evaluation / convergence check | validation loss and counts | three-part convergence test |
-| Server: aggregation / learning | alignment + M_G training + stopping rule | tree-level aggregation |
+| Server: aggregation / learning | alignment + M_glob training + stopping rule | tree-level aggregation |
 | Server: update validation | – | structural validation of every received tree |
 | Server: ZKP proof verification | all clients' proofs | all clients' proofs |
 
@@ -56,16 +56,16 @@ sent. Communication time is modelled:
     time = round trips × RTT + 8 × bytes sent / uplink + 8 × bytes received / downlink
 
 (defaults RTT 50 ms, uplink 20 Mbit/s, downlink 50 Mbit/s). Round trips per
-round: the shared ZKP session takes 2 in both (C_t and T up / c down; r_v and
-r_s up / verdict down); v12 adds 2 for its learning messages (latents and
-labels up / M_G, A_c and labels down; metrics up / ack) = 4; FL sends its forest
+round: the shared ZKP session takes 2 in both (C_r and T up / e down; y_v and
+y_s up / verdict down); v12 adds 2 for its learning messages (latents and
+labels up / M_glob, R_k and labels down; metrics up / ack) = 4; FL sends its forest
 with the responses and receives the global forest with the verdict, and adds 1
 for the convergence flag / decision = 3. Both projects count the ZKP messages
 (576 B up, 33 B down per session) in their bytes. The Global Server's time per
 round is that of its slowest client.
 
 **Metrics.** Accuracy, precision, recall, specificity, F1 score, MCC and
-Cohen's κ of each project's *global* model (v12: M_G; FL: G^(t)) on every
+Cohen's κ of each project's *global* model (v12: M_glob; FL: G^(r)) on every
 client's validation patients and on all of them pooled (Global Server),
 averaged over the 30 rounds and in the last round (30).
 

@@ -1,8 +1,8 @@
 """Stage 2 alignment: orthogonal Procrustes onto the reference landmarks.
 
-    A* = argmin_A || P_c A - P_ref ||_F^2   s.t.  A^T A = I
+    A* = argmin_A || P_k A - P_ref ||_F^2   s.t.  A^T A = I
 
-Solution: with P_c^T P_ref = U S V^T, A* = U V^T.
+Solution: with P_k^T P_ref = U S V^T, A* = U V^T.
 """
 
 from __future__ import annotations

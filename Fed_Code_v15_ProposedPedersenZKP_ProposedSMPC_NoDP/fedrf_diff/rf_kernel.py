@@ -1,17 +1,17 @@
 """Random-forest kernel and diffusion-map encoder (Stage 1).
 
-For a forest with trees b = 1..B and reference samples x_1..x_n,
+For a forest with trees b = 1..N_tree and reference samples x_1..x_n,
 
-    K(x, x_r) = (1/B) * sum_b 1[x, x_r share a leaf of tree b] / N_b(x)
+    K(x, x_r) = (1/N_tree) * sum_b 1[x, x_r share a leaf of tree b] / n_b(x)
 
-where N_b(x) is the number of reference samples in x's leaf of tree b. On the
+where n_b(x) is the number of reference samples in x's leaf of tree b. On the
 reference set itself K is symmetric, positive semidefinite and doubly
-stochastic. Its eigenpairs K v_j = lambda_j v_j give the diffusion map
+stochastic. Its eigenpairs K u_j = mu_j u_j give the diffusion map
 
-    Z = sqrt(n) * [v_1 lambda_1^tau, ..., v_dz lambda_dz^tau]
+    Z = sqrt(N_tot) * [u_1 mu_1^gamma, ..., u_dz mu_dz^gamma]
 
-(the constant eigenvector v_0 with lambda_0 = 1 is dropped). New points are
-embedded with the Nystrom extension v_j(x) = (1/lambda_j) sum_r K(x, x_r) v_j(r).
+(the constant eigenvector u_0 with mu_0 = 1 is dropped). New points are
+embedded with the Nystrom extension u_j(x) = (1/mu_j) sum_r K(x, x_r) u_j(r).
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ class ForestEncoder:
         self.forest = forest
         self.d_z = d_z
         self.tau = tau
-        self.ref_leaves = forest.apply(X_ref)  # (n, B) leaf node id per tree
+        self.ref_leaves = forest.apply(X_ref)  # (n, N_tree) leaf node id per tree
         self.n, self.B = self.ref_leaves.shape
         # Reference-sample count of every node of every tree.
         self._leaf_counts = [
@@ -39,7 +39,7 @@ class ForestEncoder:
         self.Z: np.ndarray | None = None
 
     def kernel(self) -> np.ndarray:
-        """n x n RF kernel over the reference set."""
+        """N_tot x N_tot RF kernel over the reference set."""
         K = np.zeros((self.n, self.n))
         for b in range(self.B):
             leaves = self.ref_leaves[:, b]
@@ -73,7 +73,7 @@ class ForestEncoder:
         order = np.argsort(evals)[::-1]
         evals = np.clip(evals[order], 0.0, 1.0)
         evecs = evecs[:, order]
-        # Drop the trivial constant eigenvector (lambda_0 = 1).
+        # Drop the trivial constant eigenvector (mu_0 = 1).
         lam = evals[1 : self.d_z + 1]
         V = evecs[:, 1 : self.d_z + 1]
         # Deterministic signs: largest-magnitude entry of each eigenvector positive.

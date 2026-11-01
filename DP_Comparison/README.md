@@ -5,7 +5,7 @@ versions that sit next to this folder:
 
 | Key | Folder | Privacy |
 |---|---|---|
-| v10 | `Fed_Code_v10_Schnorr_LaplaceDP_eps5` | Laplace DP on every transmitted latent vector, ε_t ~ U[2, 3] per round |
+| v10 | `Fed_Code_v10_Schnorr_LaplaceDP_eps5` | Laplace DP on every transmitted latent vector, ε_r ~ U[2, 3] per round |
 | v13 | `Fed_Code_v13_Schnorr_NoDP` | no differential privacy |
 
 Both use the same seed (42), data split, learning settings and Schnorr ZKP
@@ -28,7 +28,7 @@ folder.
 
 **Communication.** The bytes of every client and round are split into their
 parts: uplink = latent matrix, training labels, loss + TP/FP/TN/FN, ZKP proof;
-downlink = global model M_G, alignment A_c, pseudo-labels, ZKP verdict. All
+downlink = global model M_glob, alignment R_k, pseudo-labels, ZKP verdict. All
 parties run in one process, so the communication time is modelled from these
 bytes:
 

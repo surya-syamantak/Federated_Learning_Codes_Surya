@@ -20,7 +20,7 @@ from .report import POOLED, format_round
 from .server import Server
 
 LABEL_BYTES = 1  # a 0/1 label is sent as one byte
-FLOAT_BYTES = 8  # latent coordinates, losses and A_c are float64
+FLOAT_BYTES = 8  # latent coordinates, losses and R_k are float64
 METRIC_MESSAGE_BYTES = FLOAT_BYTES + 4 * 4  # log-loss + TP/FP/TN/FN (int32)
 
 
@@ -29,7 +29,7 @@ class RunResult:
     history: pd.DataFrame
     clients: list[Client]
     server: Server
-    model: object  # final M_G
+    model: object  # final M_glob
     converged: bool
     rounds_run: int
     epsilon: float | None  # per-round DP budget (None = no DP)
@@ -38,7 +38,7 @@ class RunResult:
     final_metrics: pd.DataFrame | None = None
     # Every round's metrics table (as final_metrics, with a "round" column).
     round_metrics: pd.DataFrame | None = None
-    # Global-server metrics per round (pooled over clients) + L_avg, Delta Z, Delta L.
+    # Global-server metrics per round (pooled over clients) + L_glob, Delta Z, Delta L.
     global_history: pd.DataFrame | None = None
     # One row per round and client: ZKP outcome, vectors, the three times, bytes.
     zkp_log: pd.DataFrame | None = None
@@ -58,7 +58,7 @@ def run(cfg: Config, verbose: bool = True, tamper: dict[int, str] | None = None,
     """Run up to ``cfg.max_rounds`` rounds or until the stopping rule fires.
 
     ``epsilon`` is the per-round DP budget of each transmitted vector
-    (privacy.EPSILON by default): a number, "random" (a new epsilon_t drawn
+    (privacy.EPSILON by default): a number, "random" (a new epsilon_r drawn
     from privacy.RANDOM_RANGE every round) or None (no DP). ``tamper`` maps a round to a
     client whose update is altered in transit, after its proof was made.
     """
@@ -68,13 +68,13 @@ def run(cfg: Config, verbose: bool = True, tamper: dict[int, str] | None = None,
     df = load_heart_data(cfg.data_path, cfg.drop_invalid_rows)
     fed = make_federated_split(df, cfg.n_landmarks, cfg.val_fraction, cfg.group_aware_val_split, cfg.seed)
     if cfg.n_landmarks < cfg.d_z:
-        raise ValueError("need n_landmarks >= d_z for a unique Procrustes rotation")
+        raise ValueError("need n_landmarks >= d for a unique Procrustes rotation")
 
     clients = [Client(d, fed.X_landmarks, cfg, i, epsilon) for i, d in enumerate(fed.clients)]
     sizes = {c.name: c.n_train for c in clients}
     server = Server(cfg.seed, cfg.global_n_trees, cfg.global_min_samples_leaf)
     mech = clients[0].dp
-    # Random mode: epsilon_t for every round, the same for all clients, from the run seed.
+    # Random mode: epsilon_r for every round, the same for all clients, from the run seed.
     round_eps = privacy.round_epsilons(cfg.max_rounds, cfg.seed) if epsilon == privacy.RANDOM else None
     if round_eps is not None:
         for c in clients:
@@ -85,7 +85,7 @@ def run(cfg: Config, verbose: bool = True, tamper: dict[int, str] | None = None,
         pp = zkp.setup()
 
     log(f"FedRF-Diff | seed {cfg.seed} | up to {cfg.max_rounds} rounds | "
-        + (f"Pedersen ZKP: {zkp.GROUP} group, range 0 <= u_c < 2^{zkp.RANGE_BITS}" if zkp_enabled else "ZKP disabled"))
+        + (f"Pedersen ZKP: {zkp.GROUP} group, range 0 <= u_k < 2^{zkp.RANGE_BITS}" if zkp_enabled else "ZKP disabled"))
     log("Clients (train/validation patients): " + ", ".join(
         f"{c.name} {c.n_train}/{len(c.data.y_val)}" for c in clients)
         + f"; public landmarks: {len(fed.X_landmarks)}")
@@ -220,7 +220,7 @@ def run(cfg: Config, verbose: bool = True, tamper: dict[int, str] | None = None,
                           "bytes_down": sum(r["bytes_up"] for r in cost_rows[-len(clients):]),
                           "epsilon_spent": mech.spent_epsilon()})
 
-        row = {"round": t, "delta_z": dz, "L_avg": L_avg, "delta_l": dl,
+        row = {"round": t, "delta_z": dz, "L_glob": L_avg, "delta_l": dl,
                "patience": monitor.counter, "n_accepted": len(accepted),
                "n_out_of_bound": sum(not chk.within for chk, _ in bound_info.values()),
                "zkp_seconds": sum(s.authentication_s for s in sessions.values()),
@@ -239,7 +239,7 @@ def run(cfg: Config, verbose: bool = True, tamper: dict[int, str] | None = None,
         round_tables.append(final_metrics.assign(round=t))
         global_rows.append({"round": t, **{k: int(pooled[k]) for k in ("n_val", "tp", "fp", "tn", "fn")},
                             **{k: pooled[k] for k in ("log_loss", *METRICS)},
-                            "L_avg": L_avg, "delta_z": dz, "delta_l": dl,
+                            "L_glob": L_avg, "delta_z": dz, "delta_l": dl,
                             "epsilon_spent": mech.spent_epsilon()})
 
         log(format_round(t, sessions, final_metrics, row, zkp_enabled, bound_checks=bound_info,

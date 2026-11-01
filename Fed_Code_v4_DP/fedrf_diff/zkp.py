@@ -2,23 +2,23 @@
 
 Implements the protocol of the "Proposed Zero-Knowledge Proof (ZKP)-Based
 Authentication for Vector Representation" diagram, once per latent vector
-z_c = (z_c1, ..., z_cd) a client sends (d = d_z):
+z_k = (z_k1, ..., z_kd) a client sends (d = 4):
 
   Public: prime q, generators g_1..g_d and h (known to client and server).
-  Round 1: previous commitment C_(c-1) = 1.
+  Round 1: previous commitment C_(r-1) = 1.
   (1) client -> server  vector Pedersen commitment
-          C_c = (prod_j g_j^{z_cj}) * h^{r_c} * (C_(c-1))^lambda
-  (2) client -> server  temporary commitment, fresh k_1..k_d, tau
-          T = (prod_j g_j^{k_j}) * h^tau
-  (3) server -> client  fresh random challenge c
-  (4) client -> server  responses s_j = k_j + c z_cj (mod q), s_r = tau + c r_c (mod q)
+          C_r = (prod_j g_j^{z_kj}) * h^{r_k} * (C_(r-1))^beta
+  (2) client -> server  temporary commitment, fresh w_1..w_d, eta
+          T = (prod_j g_j^{w_j}) * h^eta
+  (3) server -> client  fresh random challenge e
+  (4) client -> server  responses s_j = w_j + e z_kj (mod q), s_r = eta + e r_k (mod q)
   (5)/(6) server checks
-          (prod_j g_j^{s_j}) * h^{s_r} == T * (C_base)^c,
-          C_base = C_c / (C_(c-1))^lambda,
+          (prod_j g_j^{s_j}) * h^{s_r} == T * (C_base)^e,
+          C_base = C_r / (C_(r-1))^beta,
       and answers "Authentication Successful" (values match) or
-      "Authentication Failed" (Z~_c is discarded for this round).
+      "Authentication Failed" (Z_k is discarded for this round).
 
-lambda is the chaining exponent: a fixed non-zero element of Z_q that links
+beta is the chaining exponent: a fixed non-zero element of Z_q that links
 each commitment to the previous round's.
 
 Two details the diagram leaves implicit, without which the check cannot hold:
@@ -81,7 +81,7 @@ GROUPS = {"modp2048": MODP_2048, "test512": TEST_512}
 # --- ZKP settings ----------------------------------------------------------
 ENABLED = True  # authenticate every client's latent vectors every round
 GROUP = "modp2048"  # RFC 3526 2048-bit group (secure); "test512" is fast but NOT secure
-LAMBDA = 3  # chaining exponent lambda (fixed, non-zero, in Z_q)
+LAMBDA = 3  # chaining exponent beta (fixed, non-zero, in Z_q)
 SCALE_BITS = 32  # fixed-point encoding of the latent values
 # Optional extra proof (not in the diagram) that the commitment opens to the
 # exact vector the server receives; off = the diagram's protocol.
@@ -99,7 +99,7 @@ class PublicParams:
     q: int
     g: tuple  # g_1..g_dz
     h: int
-    lam: int  # chaining exponent lambda
+    lam: int  # chaining exponent beta
     scale_bits: int
 
     @property
@@ -159,13 +159,13 @@ def _vector_part(pp: PublicParams, z_row: list[int]):
 
 @dataclass
 class Response:
-    s: list  # s_ij, j = 1..d_z
+    s: list  # s_ij, j = 1..d
     s_r: int
     s_bind: int | None = None
 
 
 class Prover:
-    """Client side. Keeps C^(t-1) per row for the chain."""
+    """Client side. Keeps C^(r-1) per row for the chain."""
 
     def __init__(self, pp: PublicParams):
         self.pp = pp
@@ -299,7 +299,7 @@ def authenticate(prover: Prover, verifier: Verifier, client_id: str, Z_tilde: np
     if ok:
         verifier.accept(client_id, C)
     t4 = time.perf_counter()
-    prover.finalize(ok)  # client keeps C as C_(c-1) only if authenticated
+    prover.finalize(ok)  # client keeps C as C_(r-1) only if authenticated
     t5 = time.perf_counter()
 
     p_bytes, q_bytes = (int(pp.p).bit_length() + 7) // 8, (int(pp.q).bit_length() + 7) // 8

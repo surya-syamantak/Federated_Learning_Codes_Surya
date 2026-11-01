@@ -93,9 +93,9 @@ def plot_convergence(history: pd.DataFrame, eps_z: float, eps_l: float, converge
                      path: Path) -> None:
     with plt.rc_context(STYLE):
         fig, axes = plt.subplots(1, 3, figsize=(DOUBLE_COLUMN, 2.4))
-        panels = [("delta_z", eps_z, r"Representation change $\Delta Z^{(t)}$", r"$\epsilon_Z$", True),
-                  ("delta_l", eps_l, r"Loss change $|\Delta L^{(t)}|$", r"$\epsilon_L$", True),
-                  ("L_avg", None, r"Validation loss $L_{\mathrm{avg}}^{(t)}$", None, False)]
+        panels = [("delta_z", eps_z, r"Representation change $\Delta Z^{(r)}$", r"$\epsilon_z$", True),
+                  ("delta_l", eps_l, r"Loss change $|\Delta L^{(r)}|$", r"$\epsilon_l$", True),
+                  ("L_glob", None, r"Validation loss $L_{\mathrm{glob}}^{(r)}$", None, False)]
         for ax, letter, (col, eps, title, eps_label, log) in zip(axes, "abc", panels):
             d = history[["round", col]].dropna()
             if log:
@@ -160,7 +160,7 @@ def plot_accuracy_vs_dp_budget(sweep: pd.DataFrame, history: pd.DataFrame, clien
         for i, name in enumerate(names):
             col = f"accuracy[{'all' if name == GLOBAL else name}]"
             ax.plot(history["epsilon_spent"], history[col], **_style(name, i))
-        ax.set_xlabel(r"Cumulative privacy budget spent $\epsilon_t$ ($\delta = 10^{-5}$)")
+        ax.set_xlabel(r"Cumulative privacy budget spent $\epsilon_r$ ($\delta = 10^{-5}$)")
         ax.set_ylabel("Accuracy")
         ax.set_ylim(0.3, 1.0)
         _panel(ax, "b", "Accuracy per round vs budget spent")

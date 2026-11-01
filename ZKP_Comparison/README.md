@@ -10,7 +10,7 @@ versions that sit next to this folder:
 | v12 | `Fed_Code_v12_ProposedPedersenZKP_LaplaceDP_eps2-3` | Proposed (chained) Pedersen authentication on scalars (2048/256-bit group), interactive challenge |
 
 The three saved runs share the seed (42), data split, DP budgets
-(ε_t ~ U[2, 3]), 30 rounds and 4 clients, so they do the same learning work
+(ε_r ~ U[2, 3]), 30 rounds and 4 clients, so they do the same learning work
 and differ only in the ZKP. The script checks this and warns otherwise.
 
 ## Usage
@@ -40,8 +40,8 @@ communication time is modelled from the bytes each version actually sends:
 
 (defaults: RTT 50 ms, uplink 20 Mbit/s, downlink 50 Mbit/s). One ZKP session
 needs 1 round trip in v10 and v11 (non-interactive: proof up, verdict down)
-and 2 in v12 (C_t and T up, challenge c down, responses up, verdict down).
-The learning messages (latents up; M_G, A_c and labels down; metrics up) take
+and 2 in v12 (C_r and T up, challenge e down, responses up, verdict down).
+The learning messages (latents up; M_glob, R_k and labels down; metrics up) take
 2 round trips in every version. Reported: ZKP bytes per session, ZKP
 communication time per session (min, max, mean), total communication time per
 client and round, the ZKP share of time and bytes, and totals over the run.

@@ -1,11 +1,11 @@
 """Stage 3 client decoder: latent coordinates -> feature space.
 
 1. RF-compatible points: for each training sample j, intersect the leaf boxes
-   R_j = intersection over b of R_{j,b} of all trees, clip to the client's
+   H_j = intersection over b of H_{j,b} of all trees, clip to the client's
    data range, and take the box centre for numeric features. Binary and
-   nominal features keep the sample's own value (it lies inside R_j).
+   nominal features keep the sample's own value (it lies inside H_j).
 2. k-NN in diffusion coordinates (Euclidean distance in Z approximates the
-   diffusion distance), weights w_ij proportional to 1 / d_diff, normalised.
+   diffusion distance), weights ω_ij proportional to 1 / d_diff, normalised.
 3. Numeric features: weighted average of the neighbours' RF-compatible
    values. Binary/nominal features: weighted majority vote.
 """
@@ -56,7 +56,7 @@ def rf_compatible_points(
     forest: RandomForestClassifier, X: np.ndarray, numeric: np.ndarray,
     data_min: np.ndarray, data_max: np.ndarray,
 ) -> np.ndarray:
-    """x~_j: centre of the leaf-intersection box (numeric), own value otherwise."""
+    """x⋆_j: centre of the leaf-intersection box (numeric), own value otherwise."""
     lo, hi = leaf_intersection_boxes(forest, X, data_min, data_max)
     X_tilde = X.astype(float).copy()
     X_tilde[:, numeric] = ((lo + hi) / 2.0)[:, numeric]
@@ -81,7 +81,7 @@ class KNNDecoder:
 
     def decode(self, Z_query: np.ndarray) -> np.ndarray:
         w, idx = self.weights(Z_query)
-        neigh = self.X_tilde[idx]  # (m, k, d_x)
+        neigh = self.X_tilde[idx]  # (m, k_nn, d_x)
         X_hat = np.einsum("mk,mkd->md", w, neigh)
         for f in np.flatnonzero(~self.numeric):
             values = neigh[:, :, f]

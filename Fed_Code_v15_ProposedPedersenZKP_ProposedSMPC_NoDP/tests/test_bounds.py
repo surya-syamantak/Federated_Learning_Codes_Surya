@@ -11,7 +11,7 @@ from test_pipeline import CLIENTS, small_config
 
 # --- the bounds themselves ----------------------------------------------------------
 def _diffusion_like(n: int, d: int, seed: int = 0) -> np.ndarray:
-    """sqrt(n) * V * Lambda with orthonormal V and 0 <= lambda <= 1, as the encoder produces."""
+    """sqrt(N_tot) * V * Lambda with orthonormal U and 0 <= lambda <= 1, as the encoder produces."""
     rng = np.random.default_rng(seed)
     V, _ = np.linalg.qr(rng.normal(size=(n, d)))
     return math.sqrt(n) * V * rng.uniform(0.2, 1.0, size=d)
@@ -91,7 +91,7 @@ def test_honest_run_stays_within_bounds_and_learns_the_same():
     assert (server["bound_check_s"] > 0).all()
     without = run(small_config(max_rounds=2), verbose=False, bounds_enabled=False)
     assert without.bounds_log is None
-    np.testing.assert_allclose(with_bounds.history["L_avg"], without.history["L_avg"])
+    np.testing.assert_allclose(with_bounds.history["L_glob"], without.history["L_glob"])
 
 
 def test_out_of_bound_update_is_rejected_before_aggregation(monkeypatch):

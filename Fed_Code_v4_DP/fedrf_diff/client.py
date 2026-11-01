@@ -22,13 +22,13 @@ class LatentMessage:
 
     client: str
     Z_tilde: np.ndarray  # protected latent rows of the training samples
-    P: np.ndarray  # protected latent rows of the public landmarks (P_c)
-    y: np.ndarray  # training labels, needed by the server to train M_G
-    n: int  # n_c, training-set size
+    P: np.ndarray  # protected latent rows of the public landmarks (P_k)
+    y: np.ndarray  # training labels, needed by the server to train M_glob
+    n: int  # N_k, training-set size
 
     @property
     def full_matrix(self) -> np.ndarray:
-        """Z~_c including landmark rows - the matrix covered by the ZKP."""
+        """Z_k including landmark rows - the matrix covered by the ZKP."""
         return np.vstack([self.Z_tilde, self.P])
 
 
@@ -46,11 +46,11 @@ class Client:
         self.numeric = numeric_mask()
         self.data_min = data.X_train.min(axis=0)
         self.data_max = data.X_train.max(axis=0)
-        self.forest = self._train(data.X_train, data.y_train)  # RF_c^(0)
+        self.forest = self._train(data.X_train, data.y_train)  # RF_k^(0)
         self.encoder: ForestEncoder | None = None
         self.Z: np.ndarray | None = None
         self.Z_tilde: np.ndarray | None = None
-        # (encoder, A_c) that produced the rows M_G^(t) was trained on.
+        # (encoder, R_k) that produced the rows M_glob^(r) was trained on.
         self.snapshot: tuple[ForestEncoder, np.ndarray] | None = None
         # Seconds spent in each local step of the current round.
         self.timing: dict[str, float] = {}
@@ -65,7 +65,7 @@ class Client:
 
     # --- Stage 1 ----------------------------------------------------------
     def encode(self) -> LatentMessage:
-        """RF kernel of RF_c^(t-1) -> diffusion map -> Gaussian DP (privacy.py).
+        """RF kernel of RF_k^(r-1) -> diffusion map -> Gaussian DP (privacy.py).
 
         Every private patient's vector is clipped and noised; the public
         landmark vectors are clipped (noised only if NOISE_ON_LANDMARKS).
@@ -91,7 +91,7 @@ class Client:
 
     # --- Stage 3 ----------------------------------------------------------
     def evaluate(self, model, A: np.ndarray) -> dict:
-        """L_c^(t) and confusion-matrix metrics on the local validation split.
+        """L_k^(r) and confusion-matrix metrics on the local validation split.
 
         Only scalars leave the client (loss and TP/FP/TN/FN counts).
         """
@@ -111,10 +111,10 @@ class Client:
         }
 
     def decode_and_update(self, A: np.ndarray, y_hat: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        """Decode the aligned coordinates, augment D_train, retrain RF_c^(t).
+        """Decode the aligned coordinates, augment D_train, retrain RF_k^(r).
 
         ``y_hat`` are the global model's (out-of-bag) labels for this client's
-        training rows, sent by the server with M_G and A_c.
+        training rows, sent by the server with M_glob and R_k.
         """
         t0 = time.perf_counter()
         n = self.n_train
@@ -137,7 +137,7 @@ class Client:
 
     # --- inference after training ---------------------------------------------
     def predict_proba(self, model, X: np.ndarray) -> np.ndarray:
-        """P(heart disease) for new patients, using the encoder M_G was trained with."""
+        """P(heart disease) for new patients, using the encoder M_glob was trained with."""
         if self.snapshot is None:
             raise RuntimeError("no completed round yet")
         encoder, A = self.snapshot

@@ -1,6 +1,6 @@
 """Stage 1: Gaussian differential privacy for the transmitted latent vectors.
 
-Every round each client privatises every latent vector z_i (row of Z_c) it
+Every round each client privatises every latent vector z_i (row of Ψ_k) it
 sends to the server with the Gaussian mechanism:
 
     1. clip:   z_i <- z_i * min(1, C / ||z_i||_2)          (L2 norm <= C)
@@ -16,8 +16,8 @@ per-round budget (EPSILON, DELTA):
         sigma = Delta / sqrt(2 rho).
 
 Releases compose additively in rho, so after t rounds the privacy spent on
-each vector is (rho_t + 2 sqrt(rho_t ln(1/DELTA)), DELTA)-DP with
-rho_t = t rho. The guarantee is per transmitted vector (local DP on what
+each vector is (rho_r + 2 sqrt(rho_r ln(1/DELTA)), DELTA)-DP with
+rho_r = t rho. The guarantee is per transmitted vector (local DP on what
 leaves the client); it does not cover the training labels, which the server
 needs to train the global model, nor the influence one patient has on other
 patients' vectors through the shared kernel.
@@ -25,16 +25,16 @@ patients' vectors through the shared kernel.
 Adaptive clipping (ADAPTIVE_CLIP; Andrew et al. 2021, "Differentially
 Private Learning with Adaptive Clipping"): each client tracks the
 CLIP_QUANTILE-quantile of its own latent norms instead of using a fixed C.
-Each round it also releases the noisy fraction of its vectors inside C_t,
+Each round it also releases the noisy fraction of its vectors inside C_r,
 
-    b~ = (sum_i 1[||z_i|| <= C_t] + N(0, sigma_b^2)) / n
+    b~ = (sum_i 1[||z_i|| <= C_r] + N(0, sigma_b^2)) / n
 
 (sensitivity 1, so rho_b = 1 / (2 sigma_b^2)), and moves the clip norm:
-C_(t+1) = C_t * exp(-CLIP_LR * (b~ - CLIP_QUANTILE)). The round's rho is
+C_(t+1) = C_r * exp(-CLIP_LR * (b~ - CLIP_QUANTILE)). The round's rho is
 split: CLIP_BUDGET_FRACTION * rho for b~, the rest for the vectors, with
-sigma_t = 2 C_t / sqrt(2 rho_vec). The total per round is still rho, so the
+sigma_r = 2 C_r / sqrt(2 rho_vec). The total per round is still rho, so the
 epsilon spent is the same as with a fixed C; sigma / C is fixed by the budget
-alone, so the stopping threshold eps_Z + sigma / C does not change either.
+alone, so the stopping threshold eps_z + sigma / C does not change either.
 
 All DP settings live here; there is no command-line option for them.
 """

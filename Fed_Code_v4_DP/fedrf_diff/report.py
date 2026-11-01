@@ -1,6 +1,6 @@
 """Terminal reports: per-round ZKP times and metrics, averages and ZKP time analysis.
 
-"Global Server" is the global model M_G scored on all clients' validation
+"Global Server" is the global model M_glob scored on all clients' validation
 patients together, from the TP/FP/TN/FN counts the clients report (the
 "All clients (pooled)" row of final_metrics.csv).
 """
@@ -72,7 +72,7 @@ def format_round(t: int, sessions: dict, final_metrics: pd.DataFrame | None, row
     dp = (f" | DP budget spent per vector: epsilon = {row['epsilon_spent']:.2f} "
           f"(delta = {delta:g}, {epsilon:g} per round)" if epsilon is not None else "")
     out.append(f"Server: Delta Z = {_fmt(row['delta_z'])} (threshold {eps_z:.3f}) | "
-               f"L_avg = {row['L_avg']:.4f} | Delta L = {_fmt(row['delta_l'])} | "
+               f"L_glob = {row['L_glob']:.4f} | Delta L = {_fmt(row['delta_l'])} | "
                f"patience {row['patience']}/{patience} | round time {row['round_seconds']:.1f} s" + dp)
     return "\n".join(out)
 

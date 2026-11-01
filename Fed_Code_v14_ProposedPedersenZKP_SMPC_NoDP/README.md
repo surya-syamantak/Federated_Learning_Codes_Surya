@@ -11,12 +11,12 @@ Changes from v12 (`Fed_Code_v12_ProposedPedersenZKP_LaplaceDP_eps2-3`):
 
 * **Laplace DP removed completely**, as in v13: `fedrf_diff/privacy.py` is
   gone, clients send their latent vectors exactly as computed (no clipping,
-  no noise), the stopping rule uses the plain ΔZ with threshold ε_Z, and the
+  no noise), the stopping rule uses the plain ΔZ with threshold ϵ_z, and the
   accuracy-vs-DP-budget sweep and every ε column are gone.
 * **Simple SMPC added** (`fedrf_diff/smpc.py`): every client's weighted
   validation loss and TP/FP/TN/FN counts reach the server only through
   n-out-of-n additive secret sharing, so the server learns only their totals
-  (`L_avg` and the Global Server metrics). See [SMPC](#smpc-secure-aggregation).
+  (`L_glob` and the Global Server metrics). See [SMPC](#smpc-secure-aggregation).
 * The proposed ZKP (`zkp.py`) and the learning code (RF kernel, diffusion map,
   alignment, global model, decoder) are unchanged.
 
@@ -60,7 +60,7 @@ validation, with all copies of a patient on the same side.
 
 ## Terminal output
 
-The header shows the seed (42), the ZKP group and λ, that no DP is used, the
+The header shows the seed (42), the ZKP group and β, that no DP is used, the
 SMPC scheme and the stopping thresholds. Then, for every round:
 
 * **ZKP client authentication (per client):** Proof (Valid / Invalid), number
@@ -74,7 +74,7 @@ SMPC scheme and the stopping thresholds. Then, for every round:
 * **validation metrics** of that round's global model for each client and for
   the Global Server: *Accuracy, Precision, Recall, Specificity, F1 Score,
   Matthews Correlation Coefficient (MCC), Cohen's Kappa*;
-* the server line: ΔZ (and its threshold), `L_avg`, ΔL, patience and round
+* the server line: ΔZ (and its threshold), `L_glob`, ΔL, patience and round
   time.
 
 After the last round: the metrics averaged over all rounds, the ZKP time
@@ -91,9 +91,9 @@ server.
 | File | Content |
 |---|---|
 | `config.json` | the settings used, including `privacy` (`{"mechanism": "none"}`), `smpc` and `zkp` |
-| `history.csv` | per round: ΔZ, `L_avg`, ΔL, timings (incl. ZKP and SMPC seconds), and per client (harness) and pooled (`[all]`, SMPC) loss and the seven metrics |
+| `history.csv` | per round: ΔZ, `L_glob`, ΔL, timings (incl. ZKP and SMPC seconds), and per client (harness) and pooled (`[all]`, SMPC) loss and the seven metrics |
 | `final_metrics.csv` | last round's metrics per client (harness), pooled row (SMPC totals) and macro average |
-| `global_server_metrics.csv` | per round: the Global Server's TP/FP/TN/FN, log-loss and seven metrics (all from the SMPC totals), `L_avg`, ΔZ, ΔL |
+| `global_server_metrics.csv` | per round: the Global Server's TP/FP/TN/FN, log-loss and seven metrics (all from the SMPC totals), `L_glob`, ΔZ, ΔL |
 | `zkp_times.csv` | per round and client: authenticated, vectors, the three ZKP times, ZKP bytes up/down |
 | `smpc_times.csv` | per round and client: values aggregated, shares sent, share generation / summation / total time, SMPC bytes up/down; Global Server: reconstruction time |
 | `costs.csv` | per round and client (and Global Server): computation time and its parts (incl. `smpc_s`), bytes sent and received |
@@ -103,7 +103,7 @@ Figures (`figures/`, PNG at 600 dpi plus a vector PDF):
 
 | Figure | Panels |
 |---|---|
-| `convergence.png` | (a) ΔZ with ε_Z, (b) \|ΔL\| with ε_L, (c) `L_avg`; converged round marked |
+| `convergence.png` | (a) ΔZ with ϵ_z, (b) \|ΔL\| with ϵ_l, (c) `L_glob`; converged round marked |
 | `zkp_times.png` | (a) authentication, (b) proof generation, (c) proof verification time per client per round |
 | `smpc_times.png` | (a) share generation and (b) share summation time per client per round, (c) the Global Server's reconstruction time per round |
 | `computation_cost.png` | (a) computation time per round per client and server, (b) mean per-client breakdown (ZKP and SMPC times in ms under each client), (c) mean ZKP proof generation time per client |
@@ -112,25 +112,25 @@ Figures (`figures/`, PNG at 600 dpi plus a vector PDF):
 ## SMPC (secure aggregation)
 
 The server needs only totals of what the clients report after the local
-evaluation: the weighted validation loss for `L_avg = Σ_c (n_c / Σ n) L_c` and
+evaluation: the weighted validation loss for `L_glob = Σ_c (N_k / Σ n) L_k` and
 the summed TP/FP/TN/FN for the Global Server metrics. `fedrf_diff/smpc.py`
 gives it exactly those totals by **n-out-of-n additive secret sharing** among
 the clients that passed the ZKP that round.
 
-Every authenticated client c holds the vector
-`x_c = (n_c·L_c, n_val,c·L_c, TP_c, FP_c, TN_c, FN_c)` (n_c = training size,
-the weight of L_c in `L_avg`; n_val,c = validation size, for the pooled
+Every authenticated client k holds the vector
+`v_k = (N_k·L_k, N_val,k·L_k, TP_k, FP_k, TN_k, FN_k)` (N_k = training size,
+the weight of L_k in `L_glob`; N_val,k = validation size, for the pooled
 log-loss). One aggregation with N clients:
 
 | Step | Who | What |
 |---|---|---|
-| 1 | client c | encode: reals in fixed point (`round(v · 2^32)`), counts as they are, every value in Z_P, P = 2^127 − 1 (a Mersenne prime) |
-| 2 | client c | share: draw N − 1 uniformly random vectors `s_c,1 … s_c,N−1` in Z_P^6 and set `s_c,N = x_c − Σ_j s_c,j (mod P)`; keep one share, send one to each other client (pairwise secure channels) |
-| 3 | client j | add the shares it holds: `y_j = Σ_c s_c,j (mod P)`; send `y_j` to the server |
-| 4 | server | reconstruct `Σ_j y_j = Σ_c x_c (mod P)` and decode: `L_avg`, pooled TP/FP/TN/FN and log-loss |
+| 1 | client k | encode: reals in fixed point (`round(v · 2^32)`), counts as they are, every value in Z_P, P = 2^127 − 1 (a Mersenne prime) |
+| 2 | client k | share: draw N − 1 uniformly random vectors `s_k,1 … s_k,N−1` in Z_P^6 and set `s_k,N = v_k − Σ_j s_k,j (mod P)`; keep one share, send one to each other client (pairwise secure channels) |
+| 3 | client j | add the shares it holds: `y_j = Σ_c s_k,j (mod P)`; send `y_j` to the server |
+| 4 | server | reconstruct `Σ_j y_j = Σ_c v_k (mod P)` and decode: `L_glob`, pooled TP/FP/TN/FN and log-loss |
 
 What it guarantees: every share and every partial sum `y_j` is a uniformly
-random element of Z_P^6, so the server learns only `Σ_c x_c`, never one
+random element of Z_P^6, so the server learns only `Σ_c v_k`, never one
 client's loss or counts; any N − 1 shares of a client's vector are independent
 of it. A coalition of the server and up to N − 2 clients learns nothing about
 the other clients beyond the sum of their vectors. Assumptions:
@@ -147,7 +147,7 @@ Settings in `smpc.py`: `ENABLED = True`, `PRIME = 2^127 − 1`,
 `FRACTION_BITS = 32`. Costs per client and round: 3 shares of 6 values × 16
 bytes to the other clients plus one 96-byte partial sum to the server
 (384 bytes up), 3 shares received (288 bytes down). The fixed-point encoding
-changes `L_avg` by less than 10⁻¹² (tests check that every learned value and
+changes `L_glob` by less than 10⁻¹² (tests check that every learned value and
 stopping decision equals the run with plain sums).
 
 ## ZKP client authentication (proposed Pedersen)
@@ -155,36 +155,36 @@ stopping decision equals the run with plain sums).
 `fedrf_diff/zkp.py` implements the "Proposed Zero-Knowledge Proof
 (ZKP)-Based Authentication" protocol once per client and round. The ZKP is
 used **only for client authentication** and works on **scalars**: the client's
-secret v_t, the blinding factors r_t, k, τ, the server's challenge c and the
-responses r_v, r_s. It does not touch the transmitted update and changes no
+secret v_r, the blinding factors ρ_r, w, η, the server's challenge e and the
+responses y_v, y_s. It does not touch the transmitted update and changes no
 learned value; a client that fails authentication has its update rejected for
 that round.
 
 Public parameters known to both: prime q, generators g and h. The client holds
-a secret v_t (committed across rounds); in round 1 the previous commitment
-C_{t-1} is initialised to 1.
+a secret v_r (committed across rounds); in round 1 the previous commitment
+C_{r-1} is initialised to 1.
 
 | Step | Direction | What | Code |
 |---|---|---|---|
-| 1 | client → server | Pedersen commitment C_t = g^{v_t} h^{r_t} (C_{t-1})^λ | `ClientProver.commit` |
-| 2 | client → server | chooses two random integers k, τ (fresh every session); sends T = g^k h^τ | `ClientProver.announce` |
-| 3 | server → client | random challenge c (fresh every time) | `ServerVerifier.challenge` |
-| 4 | client → server | responses r_v = k + c·v_t (mod q), r_s = τ + c·r_t (mod q) | `ClientProver.respond` |
-| – | server | verifies g^{r_v} h^{r_s} =? T (C_base)^c with C_base = C_t / (C_{t-1})^λ; decision: do both sides match? | `ServerVerifier.verify` |
+| 1 | client → server | Pedersen commitment C_r = g^{v_r} h^{ρ_r} (C_{r-1})^β | `ClientProver.commit` |
+| 2 | client → server | chooses two random integers w, η (fresh every session); sends T = g^w h^η | `ClientProver.announce` |
+| 3 | server → client | random challenge e (fresh every time) | `ServerVerifier.challenge` |
+| 4 | client → server | responses y_v = w + e·v_r (mod q), y_s = η + e·ρ_r (mod q) | `ClientProver.respond` |
+| – | server | verifies g^{y_v} h^{y_s} =? T (C_base)^e with C_base = C_r / (C_{r-1})^β; decision: do both sides match? | `ServerVerifier.verify` |
 | 5 | server → client | values match → **Authentication Successful** (update accepted for aggregation) | `ServerVerifier.decide` |
 | 6 | server → client | values do not match → **Authentication Failed** (update rejected this round) | `ServerVerifier.decide` |
 
-Why it works: C_base = C_t / (C_{t-1})^λ = g^{v_t} h^{r_t}, so
-g^{r_v} h^{r_s} = g^{k + c·v_t} h^{τ + c·r_t} = T · (C_base)^c exactly when the
-client knows the opening (v_t, r_t). Nothing about v_t or r_t is revealed:
-C_t is a Pedersen commitment (perfectly hiding) and r_v, r_s are masked by the
-fresh k and τ.
+Why it works: C_base = C_r / (C_{r-1})^β = g^{v_r} h^{ρ_r}, so
+g^{y_v} h^{y_s} = g^{w + e·v_r} h^{η + e·ρ_r} = T · (C_base)^e exactly when the
+client knows the opening (v_r, ρ_r). Nothing about v_r or ρ_r is revealed:
+C_r is a Pedersen commitment (perfectly hiding) and y_v, y_s are masked by the
+fresh w and η.
 
 Implementation choices the diagram leaves open:
 
 * **Group.** The diagram's "prime q" is realised as a 2048-bit prime
-  p = k·q + 1 with a 256-bit prime q: group elements (g, h, C_t, T) are
-  reduced mod p and every scalar (v_t, r_t, k, τ, c, r_v, r_s, λ) mod q, the
+  p = κ·q + 1 with a 256-bit prime q: group elements (g, h, C_r, T) are
+  reduced mod p and every scalar (v_r, ρ_r, w, η, e, y_v, y_s, β) mod q, the
   order of the subgroup generated by g and h. p, q, g and h are derived from
   the public string `zkp.SEED` with SHA-256 ("nothing up my sleeve"), so
   nobody knows log_g(h) and anyone can regenerate them (`generate_group`,
@@ -192,12 +192,12 @@ Implementation choices the diagram leaves open:
   Exponentiations by g and h use precomputed fixed-base tables.
 * **Secret.** At enrolment each client draws a long-term 256-bit key that
   never leaves the client; its round secret is the scalar
-  v_t = SHA-256(key ‖ client ‖ t) mod q.
-* **Chain.** C_{t-1} is the client's last *successfully authenticated*
+  v_r = SHA-256(key ‖ client ‖ r) mod q.
+* **Chain.** C_{r-1} is the client's last *successfully authenticated*
   commitment; client and server both keep it. After "Authentication
-  Successful" both move on to C_t; after "Authentication Failed" both keep
-  C_{t-1}. λ = `zkp.LAMBDA` = 2 (a public scalar).
-* **Challenge.** c is drawn uniformly from Z_q by the server in every session
+  Successful" both move on to C_r; after "Authentication Failed" both keep
+  C_{r-1}. β = `zkp.LAMBDA` = 2 (a public scalar).
+* **Challenge.** e is drawn uniformly from Z_q by the server in every session
   (interactive, as in the diagram), so replaying an old session fails.
 
 Settings in `zkp.py`: `ENABLED = True`, `GROUP = "pedersen2048"`
@@ -205,18 +205,18 @@ Settings in `zkp.py`: `ENABLED = True`, `GROUP = "pedersen2048"`
 
 Times: *proof generation* = client steps 1, 2 and 4; *proof verification* =
 server step 3 plus the check and the decision; *authentication* = the whole
-session (steps 1–6). Communication per session: up C_t, T (256 bytes each) and
-r_v, r_s (32 bytes each) = 576 bytes; down c (32 bytes) + the outcome (1 byte).
+session (steps 1–6). Communication per session: up C_r, T (256 bytes each) and
+y_v, y_s (32 bytes each) = 576 bytes; down e (32 bytes) + the outcome (1 byte).
 
 Tests check the diagram's equations step by step over several rounds, the
 chain update, and that a replayed session, forged responses, an altered
 commitment, a commitment that does not continue the client's chain and a
 group element outside the subgroup all fail. `pipeline.run(tamper={t: client})`
-simulates an impostor who replays the client's previous session in round t:
+simulates an impostor who replays the client's previous session in round r:
 it is rejected and its update is not aggregated.
 
 What it guarantees, and what not: the server learns only that the client
-knows an opening of C_base; v_t and r_t stay hidden. As drawn in the diagram,
+knows an opening of C_base; v_r and ρ_r stay hidden. As drawn in the diagram,
 no commitment is registered with the server in advance (C_0 = 1), so
 continuing a client's chain proves knowledge of *some* opening rather than of
 a secret the server enrolled. Registering each client's first commitment
@@ -226,12 +226,12 @@ before training would tie authentication to the enrolled client.
 
 * **Computation** (s per round): per client, RF kernel + diffusion map, ZKP
   proof generation, validation, decoding + RF retraining, SMPC share
-  generation and summation; for the server, alignment + aggregation + `M_G`
+  generation and summation; for the server, alignment + aggregation + `M_glob`
   training + stopping rule, ZKP proof verification and SMPC reconstruction.
 * **Communication** (bytes per round): uplink = latent matrix (float64),
-  training labels (1 byte each), the ZKP messages (C_t, T, r_v, r_s) and the
+  training labels (1 byte each), the ZKP messages (C_r, T, y_v, y_s) and the
   SMPC shares and partial sum; downlink = the ZKP challenge and outcome, the
-  SMPC shares from the other clients, the pickled `M_G`, `A_c` and the
+  SMPC shares from the other clients, the pickled `M_glob`, `R_k` and the
   out-of-bag labels. (The plain loss + TP/FP/TN/FN message of v12 is gone.)
 
 ## Bounded-update enforcement
@@ -241,12 +241,12 @@ client update against a public bound (`fedrf_diff/bounds.py`). An update outside
 rejected for that round and never aggregated, just like an update that fails authentication.
 The check needs no secrets: it uses only the update and the public protocol parameters.
 
-Always checked: the shapes (`d_z` columns, the agreed number of landmark rows, one label per
+Always checked: the shapes (`d` columns, the agreed number of landmark rows, one label per
 patient row), all values finite, labels in {0, 1}.
 
-Without DP the update is the diffusion map Z = sqrt(n) V Lambda^tau, with orthonormal V and
+Without DP the update is the diffusion map Z = sqrt(N_tot) U diag(mu)^gamma, with orthonormal U and
 0 <= lambda <= 1. That gives two exact bounds over all n = patients + landmarks rows:
-every entry |z| <= sqrt(n), and ||Z||_F^2 <= n d_z.
+every entry |z| <= sqrt(N_tot), and ||Z||_F^2 <= N_tot d.
 
 Outputs:
 - each round prints a "Bounded-update enforcement (per client)" table with the outcome, the
@@ -263,17 +263,17 @@ To switch the check off for comparison, set `bounds.ENABLED = False` or call
 
 | Stage | Where | What |
 |---|---|---|
-| 1 | client | RF kernel of `RF_c^(t-1)` over its training rows + landmarks; diffusion map `Z_c = √n V Λ^τ` (constant eigenvector dropped); sent as is (no DP) |
+| 1 | client | RF kernel of `RF_k^(r-1)` over its training rows + landmarks; diffusion map `Ψ_k = √N_tot U diag(μ)^γ` (constant eigenvector dropped); sent as is (no DP) |
 | 1.5 | both | ZKP client authentication (steps 1–6); a failed authentication means the update is rejected this round |
-| 2 | server | Procrustes `A_c` from landmark rows `P_c` to `P_ref`; `Z_G` = aligned rows of the authenticated clients; `M_G` = random forest on `Z_G` + out-of-bag labels `ŷ`; ΔZ |
-| 3 | client | validation loss `L_c` and counts (kept on the client); k-NN decode of `Z_c A_c`; retrain `RF_c` on `D_train ∪ {(x̂, ŷ)}` |
-| 4 | both | SMPC secure aggregation of `(n_c L_c, n_val,c L_c, TP_c, FP_c, TN_c, FN_c)`; server: `L_avg`, ΔL, Global Server metrics from the totals; stop after 3 consecutive rounds with ΔZ < ε_Z = 0.15 and ΔL < ε_L = 0.02 |
+| 2 | server | Procrustes `R_k` from landmark rows `P_k` to `P_ref`; `Z_glob` = aligned rows of the authenticated clients; `M_glob` = random forest on `Z_glob` + out-of-bag labels `ŷ`; ΔZ |
+| 3 | client | validation loss `L_k` and counts (kept on the client); k-NN decode of `Ψ_k R_k`; retrain `RF_k` on `D_train ∪ {(x̂, ŷ)}` |
+| 4 | both | SMPC secure aggregation of `(N_k L_k, N_val,k L_k, TP_k, FP_k, TN_k, FN_k)`; server: `L_glob`, ΔL, Global Server metrics from the totals; stop after 3 consecutive rounds with ΔZ < ϵ_z = 0.15 and ΔL < ϵ_l = 0.02 |
 
 ## Results (seed 42, no DP, 2048-bit ZKP group, SMPC)
 
 Split: VA Long Beach 140/36, Cleveland 409/103. The full terminal output is
 in `outputs/run/run_log.txt`. **Converged at round 7** (ΔZ fell from 0.53 in
-round 2 to 0.09–0.12 from round 4, below ε_Z = 0.15, with ΔL < 0.02 in
+round 2 to 0.09–0.12 from round 4, below ϵ_z = 0.15, with ΔL < 0.02 in
 rounds 5–7). ZKP: 28/28 authentications successful. SMPC: 7 secure
 aggregations; the server never saw a client's own loss or counts.
 

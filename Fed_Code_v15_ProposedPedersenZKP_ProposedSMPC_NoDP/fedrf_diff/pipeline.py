@@ -21,7 +21,7 @@ from .report import POOLED, format_round
 from .server import Server
 
 LABEL_BYTES = 1  # a 0/1 label is sent as one byte
-FLOAT_BYTES = 8  # latent coordinates and A_c are float64
+FLOAT_BYTES = 8  # latent coordinates and R_k are float64
 
 
 @dataclass
@@ -29,7 +29,7 @@ class RunResult:
     history: pd.DataFrame
     clients: list[Client]
     server: Server
-    model: object  # final M_G
+    model: object  # final M_glob
     converged: bool
     rounds_run: int
     rejected: dict[int, list[str]] = field(default_factory=dict)
@@ -39,7 +39,7 @@ class RunResult:
     final_metrics: pd.DataFrame | None = None
     # Every round's metrics table (as final_metrics, with a "round" column).
     round_metrics: pd.DataFrame | None = None
-    # Global-server metrics per round (from the SMPC totals) + L_avg, Delta Z, Delta L.
+    # Global-server metrics per round (from the SMPC totals) + L_glob, Delta Z, Delta L.
     global_history: pd.DataFrame | None = None
     # One row per round and client: ZKP outcome, vectors, the three times, bytes.
     zkp_log: pd.DataFrame | None = None
@@ -80,7 +80,7 @@ def run(cfg: Config, verbose: bool = True, tamper: dict[int, str] | None = None,
     df = load_heart_data(cfg.data_path, cfg.drop_invalid_rows)
     fed = make_federated_split(df, cfg.n_landmarks, cfg.val_fraction, cfg.group_aware_val_split, cfg.seed)
     if cfg.n_landmarks < cfg.d_z:
-        raise ValueError("need n_landmarks >= d_z for a unique Procrustes rotation")
+        raise ValueError("need n_landmarks >= d for a unique Procrustes rotation")
 
     clients = [Client(d, fed.X_landmarks, cfg, i) for i, d in enumerate(fed.clients)]
     sizes = {c.name: c.n_train for c in clients}
@@ -88,14 +88,14 @@ def run(cfg: Config, verbose: bool = True, tamper: dict[int, str] | None = None,
     monitor = ConvergenceMonitor(cfg.eps_z, cfg.eps_l, cfg.patience, cfg.eps_0)
     if zkp_enabled:
         pp = zkp.setup()
-        # Client authentication: each client holds its secret; the server keeps C_{t-1} per client.
+        # Client authentication: each client holds its secret; the server keeps C_{r-1} per client.
         provers = {c.name: zkp.ClientProver(pp, c.name) for c in clients}
         verifier = zkp.ServerVerifier(pp)
-    # Proposed SMPC, Phases 1-2 (one-time): pairwise keys K_ij and the prime pool.
+    # Proposed SMPC, Phases 1-2 (one-time): pairwise keys S_ij and the prime pool.
     aggregator = smpc.SecureAggregator([c.name for c in clients]) if smpc_enabled else None
 
     log(f"FedRF-Diff | seed {cfg.seed} | up to {cfg.max_rounds} rounds | "
-        + (f"Proposed Pedersen ZKP authentication: {zkp.GROUP} group, lambda = {zkp.LAMBDA}" if zkp_enabled
+        + (f"Proposed Pedersen ZKP authentication: {zkp.GROUP} group, beta = {zkp.LAMBDA}" if zkp_enabled
            else "ZKP disabled"))
     log("Clients (train/validation patients): " + ", ".join(
         f"{c.name} {c.n_train}/{len(c.data.y_val)}" for c in clients)
@@ -103,8 +103,8 @@ def run(cfg: Config, verbose: bool = True, tamper: dict[int, str] | None = None,
     log("No differential privacy (latents sent without clipping or noise). "
         + (f"SMPC: adaptive prime secure aggregation with self-randomized pairwise masking of every "
            f"client's weighted validation loss and TP/FP/TN/FN counts (pairwise Diffie-Hellman keys, "
-           f"prime pool of {smpc.POOL_SIZE} x {smpc.PRIME_BITS}-bit primes, S_q = {smpc.SCALE:g}); the server "
-           f"learns only their totals (L_avg, Global Server metrics)."
+           f"prime pool of {smpc.POOL_SIZE} x {smpc.PRIME_BITS}-bit primes, S_quant = {smpc.SCALE:g}); the server "
+           f"learns only their totals (L_glob, Global Server metrics)."
            if smpc_enabled else "SMPC disabled: losses and counts are summed in the clear."))
     log(f"Stop when Delta Z < {monitor.eps_z:g} and Delta L < {cfg.eps_l:g} for {cfg.patience} rounds.")
     log("Global Server = the global model scored on all clients' validation patients together (SMPC totals); "
@@ -196,7 +196,7 @@ def run(cfg: Config, verbose: bool = True, tamper: dict[int, str] | None = None,
             agg, smpc_server_s = None, 0.0
         first = aggregator is not None and not smpc_rows  # Phase 1 key setup is charged to the first round
         t_stop = time.perf_counter()
-        L_avg = totals["loss_x_n_train"] / sum(sizes[n] for n in metrics)  # sum_c (n_c / sum n) L_c
+        L_avg = totals["loss_x_n_train"] / sum(sizes[n] for n in metrics)  # sum_k (N_k / sum n) L_k
         dl = monitor.delta_l(L_avg)
         converged = monitor.step(dz, dl)
         server_s += time.perf_counter() - t_stop + smpc_server_s
@@ -246,7 +246,7 @@ def run(cfg: Config, verbose: bool = True, tamper: dict[int, str] | None = None,
                               "aggregate_s": agg.aggregate_s, "bytes_up": 0,
                               "bytes_down": sum(len(v) for v in agg.masked.values()) * smpc.ELEMENT_BYTES})
 
-        row = {"round": t, "delta_z": dz, "L_avg": L_avg, "delta_l": dl,
+        row = {"round": t, "delta_z": dz, "L_glob": L_avg, "delta_l": dl,
                "patience": monitor.counter, "n_accepted": len(accepted),
                "n_out_of_bound": sum(not chk.within for chk, _ in bound_info.values()),
                "zkp_seconds": sum(s.authentication_s for s in sessions.values()),
@@ -269,7 +269,7 @@ def run(cfg: Config, verbose: bool = True, tamper: dict[int, str] | None = None,
         round_tables.append(final_metrics.assign(round=t))
         global_rows.append({"round": t, **{k: int(pooled[k]) for k in ("n_val", "tp", "fp", "tn", "fn")},
                             **{k: pooled[k] for k in ("log_loss", *METRICS)},
-                            "L_avg": L_avg, "delta_z": dz, "delta_l": dl})
+                            "L_glob": L_avg, "delta_z": dz, "delta_l": dl})
 
         log(format_round(t, sessions, final_metrics, row, zkp_enabled, bound_checks=bound_info,
                          codec={c.name: c.timing for c in clients},

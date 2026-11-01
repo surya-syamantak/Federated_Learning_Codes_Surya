@@ -13,18 +13,18 @@ from fedrf_diff.rf_kernel import forest_proba
 def test_federation_rounds(small_cfg, capsys):
     res = run_federation(small_cfg, small_cfg["dp_epsilon"], small_cfg["max_rounds"])
     out = capsys.readouterr().out
-    assert "Proposed Pedersen ZKP authentication: pedersen2048 group, lambda = 2" in out
+    assert "Proposed Pedersen ZKP authentication: pedersen2048 group, beta = 2" in out
     assert "Authentication Successful (proof valid, update accepted)" in out
     assert "Round 0 (initialisation)" in out and "Local three-part convergence test" in out
     assert res.rounds_run == 3 and res.status in (CONVERGED, MAX_ROUNDS)
     assert (res.zkp.Proof == "Valid").all() and (res.rounds["Trees Rejected"] == 0).all()
-    # Round 1 uploads F_k^(0); later rounds upload the capped F_k^(t-1)
+    # Round 1 uploads F_k^(0); later rounds upload the capped F_k^(r-1)
     assert res.zkp[res.zkp.Round == 1]["Trees"].tolist() == [4] * 4
     assert (res.zkp[res.zkp.Round > 1]["Trees"] <= small_cfg["local_budget"]).all()
     assert (res.rounds["Global Trees |G|"] <= small_cfg["global_budget"]).all()
     assert all(len(c.forest) <= small_cfg["local_budget"] for c in res.clients)
     assert set(res.metrics.Client) == {c.name for c in res.clients} | {SERVER}
-    # Global Server row = G^(t) scored on all validation patients pooled
+    # Global Server row = G^(r) scored on all validation patients pooled
     X = np.concatenate([c.X_val for c in res.clients])
     y = np.concatenate([c.y_val for c in res.clients])
     acc = np.mean(forest_proba(res.server.global_forest, X).argmax(axis=1) == y)
@@ -42,7 +42,7 @@ def test_impostor_replaying_a_session_is_rejected(small_cfg):
     t = res.transfer.set_index(["Round", "Client"])
     assert t.loc[(2, "Client 3(VA Long Beach)"), "Trees Accepted"] == 0  # its forest was not aggregated
     assert "authentication failed" in t.loc[(2, "Client 3(VA Long Beach)"), "Rejections"]
-    # Uplink and downlink include the ZKP messages: C_t, T, r_v, r_s up (576 B), c and verdict down (33 B)
+    # Uplink and downlink include the ZKP messages: C_r, T, y_v, y_s up (576 B), c and verdict down (33 B)
     cost = res.cost[res.cost.Client != SERVER]
     zkp_down = cost["Downlink (KB)"].to_numpy() - res.rounds.set_index("Round").loc[cost.Round,
                                                                                     "Global Forest (KB)"].to_numpy()
@@ -88,7 +88,7 @@ def test_main_writes_outputs(small_cfg, capsys):
     cfg = dict(small_cfg, max_rounds=2, dp_sweep=[2.0, None])
     main(cfg)
     out = capsys.readouterr().out
-    assert "=== Global model G^(t): metrics averaged over all" in out and "Accuracy of G^(t) vs DP budget" in out
+    assert "=== Global model G^(r): metrics averaged over all" in out and "Accuracy of G^(r) vs DP budget" in out
     for name in ["validation_metrics", "local_convergence", "zkp_times", "tree_transfer_times",
                  "communication_computation_cost", "rounds", "dp_budget_accuracy"]:
         assert not pd.read_csv(cfg["out_dir"] / f"{name}.csv").empty

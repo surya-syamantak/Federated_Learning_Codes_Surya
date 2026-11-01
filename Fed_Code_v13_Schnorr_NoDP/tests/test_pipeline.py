@@ -67,7 +67,7 @@ def test_update_altered_in_transit_is_rejected():
 def test_zkp_does_not_change_learning():
     a = run(small_config(max_rounds=2), verbose=False, zkp_enabled=False).history
     b = run(small_config(max_rounds=2), verbose=False).history
-    np.testing.assert_allclose(a["L_avg"], b["L_avg"])
+    np.testing.assert_allclose(a["L_glob"], b["L_glob"])
 
 
 def test_cli_prints_rounds_averages_zkp_analysis_and_writes_figures(tmp_path, capsys):

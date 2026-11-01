@@ -69,7 +69,7 @@ def test_impostor_replaying_a_session_is_rejected():
 def test_zkp_does_not_change_learning():
     a = run(small_config(max_rounds=2), verbose=False, zkp_enabled=False).history
     b = run(small_config(max_rounds=2), verbose=False).history
-    np.testing.assert_allclose(a["L_avg"], b["L_avg"])
+    np.testing.assert_allclose(a["L_glob"], b["L_glob"])
 
 
 def test_no_dp_run_sends_vectors_unchanged():
@@ -147,7 +147,7 @@ def test_epsilon_must_lie_in_the_allowed_range():
 
 
 def test_random_epsilon_option_draws_a_new_budget_each_round():
-    """EPSILON = "random" (the default): epsilon_t ~ U(RANDOM_RANGE) = U[2, 3] per round, from the seed."""
+    """EPSILON = "random" (the default): epsilon_r ~ U(RANDOM_RANGE) = U[2, 3] per round, from the seed."""
     assert privacy.EPSILON == privacy.RANDOM and privacy.RANDOM_RANGE == (2.0, 3.0)
     h = run(small_config(), verbose=False, epsilon=privacy.RANDOM, zkp_enabled=False).history
     eps = privacy.round_epsilons(3, small_config().seed)
@@ -155,5 +155,5 @@ def test_random_epsilon_option_draws_a_new_budget_each_round():
     assert ((eps >= low) & (eps <= high)).all() and len(set(eps)) == 3
     np.testing.assert_allclose(h["epsilon_round"], eps)
     np.testing.assert_allclose(h["laplace_scale"], 2 * privacy.CLIP_NORM / eps)
-    np.testing.assert_allclose(h["epsilon_spent"], np.cumsum(eps))  # spent = sum of epsilon_t
+    np.testing.assert_allclose(h["epsilon_spent"], np.cumsum(eps))  # spent = sum of epsilon_r
     assert h["delta_z_threshold"].nunique() == 3  # the threshold follows each round's noise

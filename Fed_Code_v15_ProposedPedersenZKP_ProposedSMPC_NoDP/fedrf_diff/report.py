@@ -1,7 +1,7 @@
 """Terminal reports: per-round ZKP, SMPC, encoding and decoding times and metrics,
 averages and the ZKP / SMPC / encoding-decoding time analyses.
 
-"Global Server" is the global model M_G scored on all clients' validation
+"Global Server" is the global model M_glob scored on all clients' validation
 patients together, from the TP/FP/TN/FN totals the server obtains by the
 proposed SMPC (adaptive prime secure aggregation with pairwise masking) (the "All clients (pooled)" row of final_metrics.csv). The
 per-client metrics are the evaluation harness: computed on each client and
@@ -83,8 +83,8 @@ def smpc_round_text(agg) -> str:
             for name, p in agg.clients.items()]
     table = pd.DataFrame(rows).to_string(index=False, float_format=lambda v: f"{v:.4f}")
     t = agg.totals
-    return (table + f"\n  Server: p_t = Pool[{agg.prime_index}] = {agg.prime}; aggregation + dequantization "
-            f"{agg.aggregate_s * MS:.4f} ms; learned only the totals sum n_c L_c = {t['loss_x_n_train']:.4f}, "
+    return (table + f"\n  Server: p_r = Pool[{agg.prime_index}] = {agg.prime}; aggregation + dequantization "
+            f"{agg.aggregate_s * MS:.4f} ms; learned only the totals sum N_k L_k = {t['loss_x_n_train']:.4f}, "
             f"TP = {round(t['tp'])}, FP = {round(t['fp'])}, TN = {round(t['tn'])}, FN = {round(t['fn'])} "
             f"(no client's own loss or counts)")
 
@@ -136,7 +136,7 @@ def format_round(t: int, sessions: dict, final_metrics: pd.DataFrame | None, row
     out += ["", f"Validation metrics of the global model after round {t} (clients: evaluation harness; "
             "Global Server: SMPC totals):", metrics_text(clients_and_global(final_metrics))]
     out.append(f"Server: Delta Z = {_fmt(row['delta_z'])} (threshold {eps_z:.3f}) | "
-               f"L_avg = {row['L_avg']:.4f} | Delta L = {_fmt(row['delta_l'])} | "
+               f"L_glob = {row['L_glob']:.4f} | Delta L = {_fmt(row['delta_l'])} | "
                f"patience {row['patience']}/{patience} | round time {row['round_seconds']:.1f} s")
     return "\n".join(out)
 
@@ -211,7 +211,7 @@ def format_end_of_run(result) -> str:
         out.append("One-time pairwise key setup (ms, charged to the first round): " + ", ".join(
             f"{n} {v * MS:.2f}" for n, v in zip(first["client"], first["key_setup_s"])))
         used = server.groupby("prime_index", sort=True)
-        out.append("Adaptive prime p_t: " + "; ".join(
+        out.append("Adaptive prime p_r: " + "; ".join(
             f"Pool[{i}] = {g['prime'].iloc[0]} in round(s) {', '.join(map(str, g['round']))}" for i, g in used))
         later = clients[clients["round"] > clients["round"].min()]
         ref = later if len(later) else clients

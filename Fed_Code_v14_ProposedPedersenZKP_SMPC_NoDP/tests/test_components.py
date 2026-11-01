@@ -141,10 +141,10 @@ def test_group_primes_and_generators(group):
 def test_honest_client_follows_the_diagram_over_rounds(pp):
     p, q, g, h, lam = int(pp.p), int(pp.q), int(pp.g), int(pp.h), zkp.LAMBDA
     client, server = zkp.ClientProver(pp, "Client 1(Hungary)"), zkp.ServerVerifier(pp)
-    assert client.C_prev == 1  # round 1: C_{t-1} initialised to 1
+    assert client.C_prev == 1  # round 1: C_{r-1} initialised to 1
     for t in (1, 2, 3):
         C_prev = int(client.C_prev)
-        C_t = int(client.commit(t))  # 1. C_t = g^{v_t} h^{r_t} (C_{t-1})^lambda
+        C_t = int(client.commit(t))  # 1. C_r = g^{v_r} h^{ρ_r} (C_{r-1})^beta
         v_t, r_t = int(client._v), int(client._r)
         assert C_t == pow(g, v_t, p) * pow(h, r_t, p) * pow(C_prev, lam, p) % p
         T = int(client.announce())  # 2. T = g^k h^tau
@@ -153,7 +153,7 @@ def test_honest_client_follows_the_diagram_over_rounds(pp):
         k, tau = int(client._k), int(client._tau)
         r_v, r_s = (int(x) for x in client.respond(c))  # 4. responses
         assert r_v == (k + c * v_t) % q and r_s == (tau + c * r_t) % q
-        C_base = C_t * pow(pow(C_prev, lam, p), -1, p) % p  # C_t / (C_{t-1})^lambda
+        C_base = C_t * pow(pow(C_prev, lam, p), -1, p) % p  # C_r / (C_{r-1})^beta
         assert pow(g, r_v, p) * pow(h, r_s, p) % p == T * pow(C_base, c, p) % p
         assert server.verify(client.client_id, C_t, T, c, r_v, r_s)
         server.decide(client.client_id, C_t, True)  # 5. Authentication Successful
@@ -168,7 +168,7 @@ def test_sessions_are_valid_and_record_times_and_scalar_messages(pp):
         assert s.authenticated and s.outcome == "Valid" and s.vectors == 6
         assert s.authentication_s >= s.proof_generation_s > 0 and s.proof_verification_s > 0
         assert s.bytes_up == 2 * pp.p_bytes + 2 * pp.q_bytes and s.bytes_down == pp.q_bytes + 1
-    # Fresh k, tau, r_t and c every session: transcripts never repeat.
+    # Fresh k, tau, ρ_r and c every session: transcripts never repeat.
     first = client.last_transcript
     zkp.authenticate(pp, client, server, 3)
     assert all(a != b for a, b in zip(first, client.last_transcript))
@@ -182,7 +182,7 @@ def test_replayed_wrong_secret_and_forged_sessions_fail(pp):
     replayed = zkp.authenticate(pp, client, server, 2, replay=old)
     assert not replayed.authenticated and replayed.outcome == "Invalid"
     assert server.C_prev["c"] == client.C_prev == old[0]  # chain kept after a failure
-    # Responses that do not match the challenge (forged r_v or r_s).
+    # Responses that do not match the challenge (forged y_v or y_s).
     C_t, T = client.commit(2), client.announce()
     c = server.challenge()
     r_v, r_s = client.respond(c)
@@ -190,11 +190,11 @@ def test_replayed_wrong_secret_and_forged_sessions_fail(pp):
     assert not server.verify("c", C_t, T, c, r_v, (r_s + 1) % pp.q)
     assert not server.verify("c", C_t, T, (c + 1) % pp.q, r_v, r_s)
     assert not server.verify("c", C_t * pp.g % pp.p, T, c, r_v, r_s)  # altered commitment
-    assert not server.verify("other client", C_t, T, c, r_v, r_s)  # wrong C_{t-1} in the chain
+    assert not server.verify("other client", C_t, T, c, r_v, r_s)  # wrong C_{r-1} in the chain
     assert not server.verify("c", C_t, 0, c, r_v, r_s)  # T outside the group
     assert server.verify("c", C_t, T, c, r_v, r_s)
     # A client whose commitment chain diverged from the server's is rejected.
-    stranger = zkp.ClientProver(pp, "c")  # same name, unrelated C_{t-1} = 1 and secret
+    stranger = zkp.ClientProver(pp, "c")  # same name, unrelated C_{r-1} = 1 and secret
     C_s, T_s = stranger.commit(3), stranger.announce()
     c = server.challenge()
     assert not server.verify("c", C_s, T_s, c, *stranger.respond(c))

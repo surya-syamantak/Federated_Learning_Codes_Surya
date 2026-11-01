@@ -1,36 +1,36 @@
 """Stage 1.5: Schnorr-based zero-knowledge proof (ZKP) for each client's update.
 
 Implements the "Schnorr-based Zero-Knowledge Proof (ZKP) in Federated
-Learning" protocol once per client and round. The client's update u_c is
+Learning" protocol once per client and round. The client's update u_k is
 everything it sends the server that round: its DP-protected latent matrix
-Z~_c (patient and landmark rows) and its training labels.
+Z_k (patient and landmark rows) and its training labels.
 
   Public: primes p and q = (p - 1) / 2, generator g of the order-q subgroup.
 
   Client side - proof generation
-    1. local training -> update u_c (encoded as an element of Z_q)
-    2. choose random r_c in Z_q
-    3. commitment  R_c = g^{r_c} mod p
-    4. proof       s_c = r_c + e * u_c mod q,  e = H(R_c || u_c || context) mod q
-       send (R_c, s_c) to the server with the update
+    1. local training -> update u_k (encoded as an element of Z_q)
+    2. choose random r_k in Z_q
+    3. commitment  R_k = g^{r_k} mod p
+    4. proof       s_k = r_k + e * u_k mod q,  e = H(R_k || u_k || context) mod q
+       send (R_k, s_k) to the server with the update
 
   Server side - proof verification
-    1. receive (R_c, s_c) and the update
-    2. challenge   e = H(R_c || u_c || context) mod q
-    3. check       g^{s_c} == R_c * (g^{u_c})^e mod p
+    1. receive (R_k, s_k) and the update
+    2. challenge   e = H(R_k || u_k || context) mod q
+    3. check       g^{s_k} == R_k * (g^{u_k})^e mod p
        valid   -> accept the client's update, use it in the global aggregation
        invalid -> reject the client's update for this round
 
 Implementation choices the diagram leaves open:
 
-* u_c = SHA-256 of the update's bytes, mod q. The server computes u_c from
+* u_k = SHA-256 of the update's bytes, mod q. The server computes u_k from
   the update it actually received, so an update changed after the proof was
   made fails the check.
 * H = SHA-256; context = protocol name, client and round, so a proof cannot
   be replayed for another client or round.
 
 Timing per client and round: proof generation = client steps 1-4 (encoding
-u_c, r_c, R_c, e, s_c); proof verification = server steps 1-3; authentication
+u_k, r_k, R_k, e, s_k); proof verification = server steps 1-3; authentication
 = the whole session end to end.
 
 All ZKP settings live below; there is no command-line option for them.
@@ -111,7 +111,7 @@ def setup(group: str | None = None) -> PublicParams:
 
 
 def encode_update(pp: PublicParams, *arrays: np.ndarray) -> int:
-    """u_c: SHA-256 of the update's arrays (shape, dtype and bytes), as an element of Z_q."""
+    """u_k: SHA-256 of the update's arrays (shape, dtype and bytes), as an element of Z_q."""
     digest = hashlib.sha256()
     for a in arrays:
         a = np.ascontiguousarray(a)
@@ -121,7 +121,7 @@ def encode_update(pp: PublicParams, *arrays: np.ndarray) -> int:
 
 
 def challenge(pp: PublicParams, R: int, u: int, context: str) -> int:
-    """e = H(R_c || u_c || context) mod q."""
+    """e = H(R_k || u_k || context) mod q."""
     data = (int(R).to_bytes(pp.p_bytes, "big") + int(u).to_bytes(pp.q_bytes, "big")
             + context.encode("utf-8"))
     return _mpz(int.from_bytes(hashlib.sha256(data).digest(), "big") % int(pp.q))
@@ -132,16 +132,16 @@ def context_for(client_id: str, round_: int) -> str:
 
 
 def prove(pp: PublicParams, u: int, context: str) -> tuple[int, int]:
-    """Client steps 2-4: (R_c, s_c) for update u_c."""
-    r = _mpz(secrets.randbelow(int(pp.q)))  # 2. random r_c in Z_q
-    R = _powmod(pp.g, r, pp.p)  # 3. R_c = g^{r_c} mod p
+    """Client steps 2-4: (R_k, s_k) for update u_k."""
+    r = _mpz(secrets.randbelow(int(pp.q)))  # 2. random r_k in Z_q
+    R = _powmod(pp.g, r, pp.p)  # 3. R_k = g^{r_k} mod p
     e = challenge(pp, R, u, context)
-    s = (r + e * u) % pp.q  # 4. s_c = r_c + e u_c mod q
+    s = (r + e * u) % pp.q  # 4. s_k = r_k + e u_k mod q
     return R, s
 
 
 def verify(pp: PublicParams, R: int, s: int, u: int, context: str) -> bool:
-    """Server steps 2-3: g^{s_c} == R_c (g^{u_c})^e mod p."""
+    """Server steps 2-3: g^{s_k} == R_k (g^{u_k})^e mod p."""
     if not (0 < R < pp.p and 0 <= s < pp.q):
         return False
     e = challenge(pp, R, u, context)  # 2. challenge
@@ -159,7 +159,7 @@ class Session:
     proof_generation_s: float  # client steps 1-4
     proof_verification_s: float  # server steps 1-3
     authentication_s: float  # whole session
-    bytes_up: int  # client -> server: R_c and s_c
+    bytes_up: int  # client -> server: R_k and s_k
     bytes_down: int  # server -> client: valid / invalid
 
     @property
@@ -177,10 +177,10 @@ def authenticate(pp: PublicParams, client_id: str, round_: int, update: tuple,
     received = update if received is None else received
     context = context_for(client_id, round_)
     t0 = time.perf_counter()
-    u_client = encode_update(pp, *update)  # 1. update u_c
-    R, s = prove(pp, u_client, context)  # 2-4. r_c, R_c, e, s_c
+    u_client = encode_update(pp, *update)  # 1. update u_k
+    R, s = prove(pp, u_client, context)  # 2-4. r_k, R_k, e, s_k
     t1 = time.perf_counter()
-    u_server = encode_update(pp, *received)  # 1. receive (R_c, s_c) and the update
+    u_server = encode_update(pp, *received)  # 1. receive (R_k, s_k) and the update
     ok = verify(pp, R, s, u_server, context)  # 2-3. challenge and check -> valid / invalid
     t2 = time.perf_counter()
     return Session(authenticated=bool(ok), vectors=len(update[0]),

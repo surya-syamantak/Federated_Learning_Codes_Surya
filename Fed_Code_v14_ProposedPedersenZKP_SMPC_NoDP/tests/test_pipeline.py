@@ -67,7 +67,7 @@ def test_impostor_replaying_a_session_is_rejected():
 def test_zkp_does_not_change_learning():
     a = run(small_config(max_rounds=2), verbose=False, zkp_enabled=False).history
     b = run(small_config(max_rounds=2), verbose=False).history
-    np.testing.assert_allclose(a["L_avg"], b["L_avg"])
+    np.testing.assert_allclose(a["L_glob"], b["L_glob"])
 
 
 def test_cli_prints_rounds_averages_zkp_analysis_and_writes_figures(tmp_path, capsys):
@@ -126,7 +126,7 @@ def test_smpc_secure_aggregation_gives_the_server_only_exact_totals():
     with_smpc = run(small_config(max_rounds=2), verbose=False)
     clear = run(small_config(max_rounds=2), verbose=False, smpc_enabled=False)
     # SMPC changes no learned value: the same losses, metrics and stopping decisions.
-    np.testing.assert_allclose(with_smpc.history["L_avg"], clear.history["L_avg"], rtol=0, atol=1e-9)
+    np.testing.assert_allclose(with_smpc.history["L_glob"], clear.history["L_glob"], rtol=0, atol=1e-9)
     for k in ("accuracy[all]", "mcc[all]", "kappa[all]", "delta_z"):
         np.testing.assert_allclose(with_smpc.history[k].astype(float), clear.history[k].astype(float),
                                    equal_nan=True)
@@ -138,7 +138,7 @@ def test_smpc_secure_aggregation_gives_the_server_only_exact_totals():
         assert int(pooled[k]) == int(table.loc[CLIENTS, k].sum())
     sizes = {c.name: c.n_train for c in with_smpc.clients}
     losses = {c: float(h[f"loss[{c}]"]) for c in CLIENTS}
-    assert h["L_avg"] == pytest.approx(weighted_loss(losses, sizes), abs=1e-9)
+    assert h["L_glob"] == pytest.approx(weighted_loss(losses, sizes), abs=1e-9)
     # Costs and log: one aggregation per round, 3 shares sent per client, 16-byte elements.
     log = with_smpc.smpc_log
     clients = log[log["client"] != "Global Server"]

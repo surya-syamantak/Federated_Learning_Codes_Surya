@@ -65,7 +65,7 @@ class PrivacyAccountant:
     """Per-patient privacy loss of one client under basic composition.
 
     Only newly grown trees consume budget: re-sending a tree that was already released (in
-    F_k^(t-1) or G^(t)) is post-processing of a DP output and costs nothing.
+    F_k^(r-1) or G^(r)) is post-processing of a DP output and costs nothing.
     """
 
     def __init__(self):

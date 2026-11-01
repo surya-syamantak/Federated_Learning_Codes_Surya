@@ -1,7 +1,7 @@
 Property,Additive secret sharing (v14),Proposed adaptive-prime pairwise masking (v15)
 Primitive,n-out-of-n additive secret sharing,self-randomized pairwise masking (PRG streams)
-Modulus,fixed prime 2^127 - 1,"adaptive prime p_t = Pool[H(seed||t) mod 3], 61-bit pool"
-Encoding,"fixed point 2^32 (reals), integers as is",quantization S_q = 10^6
+Modulus,fixed prime 2^127 - 1,"adaptive prime p_r = Pool[H(seed||r) mod 3], 61-bit pool"
+Encoding,"fixed point 2^32 (reals), integers as is",quantization S_quant = 10^6
 One-time setup,none,pairwise Diffie-Hellman keys (2048-bit ZKP group)
 Client-to-client messages per round,"N - 1 shares sent, N - 1 received",none
 Client-to-server messages per round,1 partial sum,1 masked vector

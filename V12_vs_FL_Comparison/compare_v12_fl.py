@@ -2,13 +2,13 @@
 
     v12  Fed_Code_v12_ProposedPedersenZKP_LaplaceDP_eps2-3
          Diffusion-map latents + Procrustes alignment + global RF on the latents,
-         Laplace DP on the latents (eps_t ~ U[2, 3]).
+         Laplace DP on the latents (eps_r ~ U[2, 3]).
     FL   Federated-Learning_ProposedZKP
          Whole random forests exchanged as explicit trees, tree-level aggregation,
-         Laplace DP on the leaf vectors (eps_t ~ U[2, 3]).
+         Laplace DP on the leaf vectors (eps_r ~ U[2, 3]).
 
 Both use the same proposed Pedersen ZKP for client authentication (the same
-zkp.py, group and lambda = 2: chained commitment C_t = g^v_t h^r_t (C_{t-1})^lambda,
+zkp.py, group and beta = 2: chained commitment C_r = g^v_r h^ρ_r (C_{r-1})^beta,
 server-sent challenge), so the comparison isolates the learning designs.
 
 Inputs are the two saved runs (outputs/run/ of each folder; make them with
@@ -21,7 +21,7 @@ quantities, so they are mapped onto shared categories:
     Local model update           v12: decoding + RF retraining           FL: local tuning (CV) + refinement
     Evaluation / convergence     v12: validation loss and counts         FL: three-part convergence test
   Server computation (per round)
-    Aggregation / learning       v12: alignment + M_G + stopping rule    FL: tree-level aggregation
+    Aggregation / learning       v12: alignment + M_glob + stopping rule    FL: tree-level aggregation
     Update validation            v12: none                               FL: structural tree validation
     ZKP verification             v12: all clients' proofs                FL: all clients' proofs
 
@@ -29,8 +29,8 @@ quantities, so they are mapped onto shared categories:
     bytes from each project's own cost table, and a modelled time
         time = round trips x RTT + 8 x bytes_up / uplink + 8 x bytes_down / downlink
     with 2 round trips per round for the (shared) interactive ZKP session in both
-    (C_t and T up / c down; r_v and r_s up / verdict down), plus the learning
-    messages: v12 2 more (latents and labels up / M_G, A_c and labels down;
+    (C_r and T up / e down; y_v and y_s up / verdict down), plus the learning
+    messages: v12 2 more (latents and labels up / M_glob, R_k and labels down;
     metrics up / ack) = 4, FL 1 more (convergence flag up / decision down) = 3;
     FL's forest travels with the responses and its global forest with the verdict.
     The server's communication time per round is that of its slowest client
@@ -157,7 +157,7 @@ def zkp_fingerprint(root: Path, p: Project) -> dict:
     src = (root / p.folder / "fedrf_diff" / "zkp.py").read_text(encoding="utf-8")
     seed = next((line.split("=", 1)[1].split("#")[0].strip() for line in src.splitlines()
                  if line.startswith("SEED =")), "?")
-    return {"chained commitment C_t (C_{t-1})^lambda": "class ClientProver" in src and "C_prev" in src,
+    return {"chained commitment C_r (C_{r-1})^beta": "class ClientProver" in src and "C_prev" in src,
             "server-sent challenge": "def challenge(self)" in src,
             "Fiat-Shamir": "Fiat-Shamir" in src and "def challenge(self)" not in src,
             "group seed": seed}
@@ -166,7 +166,7 @@ def zkp_fingerprint(root: Path, p: Project) -> dict:
 def same_zkp(root: Path) -> tuple[bool, list[str]]:
     a, b = (zkp_fingerprint(root, p) for p in PROJECTS)
     lines = [f"  {PROJECTS[0].key}: {a}", f"  {PROJECTS[1].key}: {b}"]
-    return a == b and a["chained commitment C_t (C_{t-1})^lambda"], lines
+    return a == b and a["chained commitment C_r (C_{r-1})^beta"], lines
 
 
 def load_v12(root: Path, p: Project) -> Run:

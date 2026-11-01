@@ -6,10 +6,10 @@ Same learning settings and ZKP; the versions differ only in the DP.
 DP overhead benchmark: v10's Laplace mechanism, 30 rounds x 4 clients ...
                          min (ms)  max (ms)  mean (ms)
 client                                                
-Client 1(Hungary)          0.1238    0.4004     0.1957
-Client 2(Switzerland)      0.0909    0.3186     0.1511
-Client 3(VA Long Beach)    0.1105    0.2812     0.1756
-Client 4(Cleveland)        0.1501    0.4507     0.2606
+Client 1(Hungary)          0.0291    0.0427     0.0342
+Client 2(Switzerland)      0.0194    0.0280     0.0229
+Client 3(VA Long Beach)    0.0244    0.0541     0.0289
+Client 4(Cleveland)        0.0429    0.0865     0.0523
 
 === Communication (RTT 50 ms, up 20 Mbit/s, down 50 Mbit/s, 3 round trips per round) ===
 version                                               v10         v13
@@ -28,25 +28,25 @@ MB_total_until_stop                               57.4806     13.5306
 === Computation ===
 version                                             v10       v13
 rounds                                          30.0000    7.0000
-Encoding (+ DP in v10) per round (ms, mean)   1412.1889 1077.1667
-ZKP proof generation per round (ms, mean)       11.5985    9.3268
-Validation per round (ms, mean)                328.6042  245.6356
-Decoding + RF retraining per round (ms, mean) 2298.3104 1686.2329
-Server learning per round (ms, mean)           413.3656  307.1362
-ZKP proof verification per round (ms, mean)     14.4525   11.5645
-per client per round (s, min)                    1.0458    0.7405
-per client per round (s, max)                    1.1057    0.8299
-per client per round (s, mean)                   1.0732    0.7973
-server per round (s, min)                        0.4148    0.3122
-server per round (s, max)                        0.4480    0.3265
-server per round (s, mean)                       0.4278    0.3187
-total per round (s, min)                         4.6123    3.2806
-total per round (s, max)                         4.8533    3.6324
-total per round (s, mean)                        4.7207    3.5078
-total computation until stop (s)               141.6222   24.5549
+Encoding (+ DP in v10) per round (ms, mean)   3060.4957 3324.0771
+ZKP proof generation per round (ms, mean)       29.3298   31.7000
+Validation per round (ms, mean)                816.0158  969.6621
+Decoding + RF retraining per round (ms, mean) 4682.4580 5206.3026
+Server learning per round (ms, mean)           843.3092  932.2709
+ZKP proof verification per round (ms, mean)     37.0280   38.9870
+per client per round (s, min)                    0.9837    2.3254
+per client per round (s, max)                    2.8102    2.6828
+per client per round (s, mean)                   2.2739    2.5225
+server per round (s, min)                        0.4409    0.8975
+server per round (s, max)                        1.0678    1.0975
+server per round (s, mean)                       0.8814    0.9722
+total per round (s, min)                         4.3867   10.1992
+total per round (s, max)                        12.2429   11.8285
+total per round (s, mean)                        9.9769   11.0620
+total computation until stop (s)               299.3083   77.4341
 
 === Summary ===
-Version                            Laplace DP, eps_t ~ U[2, 3] (v10) No DP (v13)
+Version                            Laplace DP, eps_r ~ U[2, 3] (v10) No DP (v13)
 Rounds                                                            30           7
 Converged                                                         no         yes
 Comm per client-round (ms)                                  229.2125    229.8895
@@ -54,9 +54,9 @@ Up per client-round (KB)                                     10.7155     10.7155
 Down per client-round (KB)                                  468.2892    472.5208
 Comm until stop (s)                                           6.9555      1.6277
 Data until stop (MB)                                         57.4806     13.5306
-Comp per round (s)                                            4.7207      3.5078
-Comp per client-round (s)                                     1.0732      0.7973
-Comp until stop (s)                                         141.6222     24.5549
+Comp per round (s)                                            9.9769     11.0620
+Comp per client-round (s)                                     2.2739      2.5225
+Comp until stop (s)                                         299.3083     77.4341
 Global Server Accuracy (mean)                                 0.8056      0.8438
 Global Server Precision (mean)                                0.8545      0.8722
 Global Server Recall (mean)                                   0.7708      0.8283
@@ -64,7 +64,7 @@ Global Server Specificity (mean)                              0.8453      0.8614
 Global Server F1 score (mean)                                 0.8084      0.8496
 Global Server MCC (mean)                                      0.6182      0.6885
 Global Server Cohen's kappa (mean)                            0.6120      0.6873
-DP time per client-round (ms)                                 0.1957      0.0000
+DP time per client-round (ms)                                 0.0346      0.0000
 
 === Validation metrics averaged over the rounds (mean; v10: 30 rounds, v13: 7 rounds) ===
 version                                Laplace DP (v10)  No DP (v13)  No DP - DP

@@ -1,0 +1,365 @@
+PS C:\Users\SURYA\Documents\Federated_Learning> cd Fed_code
+PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> 
+PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> 
+PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> python -m venv .venv
+PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> .venv\Scripts\activate
+.venv\Scripts\activate : File C:\Users\SURYA\Documents\Federated_Learning\Fed_code\.venv\Scripts\Activate.ps1 cannot be loaded because running scripts is disabled 
+on this system. For more information, see about_Execution_Policies at https:/go.microsoft.com/fwlink/?LinkID=135170.
+At line:1 char:1
++ .venv\Scripts\activate
++ ~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : SecurityError: (:) [], PSSecurityException
+    + FullyQualifiedErrorId : UnauthorizedAccess
+PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> .venv\Scripts\Activate.ps1
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> pip install -r requirements.txt
+Collecting numpy>=1.24 (from -r requirements.txt (line 1))
+  Downloading numpy-2.5.3-cp314-cp314-win_amd64.whl.metadata (6.6 kB)
+Collecting scipy>=1.10 (from -r requirements.txt (line 2))
+  Downloading scipy-1.18.1-cp314-cp314-win_amd64.whl.metadata (61 kB)
+Collecting scikit-learn>=1.3 (from -r requirements.txt (line 3))
+  Downloading scikit_learn-1.9.1-cp314-cp314-win_amd64.whl.metadata (9.3 kB)
+Collecting pandas>=2.0 (from -r requirements.txt (line 4))
+  Downloading pandas-3.0.6-cp314-cp314-win_amd64.whl.metadata (19 kB)
+Collecting matplotlib>=3.7 (from -r requirements.txt (line 5))
+  Downloading matplotlib-3.11.2-cp314-cp314-win_amd64.whl.metadata (80 kB)
+Collecting gmpy2>=2.1 (from -r requirements.txt (line 6))
+  Downloading gmpy2-2.3.1-cp314-cp314-win_amd64.whl.metadata (2.6 kB)
+Collecting pytest>=7 (from -r requirements.txt (line 7))
+  Downloading pytest-9.1.1-py3-none-any.whl.metadata (7.6 kB)
+Collecting joblib>=1.4.0 (from scikit-learn>=1.3->-r requirements.txt (line 3))
+  Downloading joblib-1.6.0-py3-none-any.whl.metadata (6.5 kB)
+Collecting narwhals>=2.0.1 (from scikit-learn>=1.3->-r requirements.txt (line 3))
+  Downloading narwhals-2.26.0-py3-none-any.whl.metadata (15 kB)
+Collecting threadpoolctl>=3.5.0 (from scikit-learn>=1.3->-r requirements.txt (line 3))
+  Downloading threadpoolctl-3.7.0-py3-none-any.whl.metadata (24 kB)
+Collecting python-dateutil>=2.8.2 (from pandas>=2.0->-r requirements.txt (line 4))
+  Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+Collecting tzdata (from pandas>=2.0->-r requirements.txt (line 4))
+  Downloading tzdata-2026.4-py2.py3-none-any.whl.metadata (1.4 kB)
+Collecting contourpy>=1.0.1 (from matplotlib>=3.7->-r requirements.txt (line 5))
+  Downloading contourpy-1.4.0-cp314-cp314-win_amd64.whl.metadata (3.8 kB)
+Collecting cycler>=0.10 (from matplotlib>=3.7->-r requirements.txt (line 5))
+  Using cached cycler-0.12.1-py3-none-any.whl.metadata (3.8 kB)
+Collecting fonttools>=4.28.2 (from matplotlib>=3.7->-r requirements.txt (line 5))
+  Downloading fonttools-4.66.1-cp314-cp314-win_amd64.whl.metadata (132 kB)
+Collecting kiwisolver>=1.3.1 (from matplotlib>=3.7->-r requirements.txt (line 5))
+  Downloading kiwisolver-1.5.1-cp314-cp314-win_amd64.whl.metadata (5.2 kB)
+Collecting packaging>=20.0 (from matplotlib>=3.7->-r requirements.txt (line 5))
+  Downloading packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+Collecting pillow>=9 (from matplotlib>=3.7->-r requirements.txt (line 5))
+  Downloading pillow-12.3.0-cp314-cp314-win_amd64.whl.metadata (9.3 kB)
+Collecting pyparsing>=3 (from matplotlib>=3.7->-r requirements.txt (line 5))
+  Downloading pyparsing-3.3.3-py3-none-any.whl.metadata (5.9 kB)
+Collecting colorama>=0.4 (from pytest>=7->-r requirements.txt (line 7))
+  Using cached colorama-0.4.6-py2.py3-none-any.whl.metadata (17 kB)
+Collecting iniconfig>=1.0.1 (from pytest>=7->-r requirements.txt (line 7))
+  Downloading iniconfig-2.3.0-py3-none-any.whl.metadata (2.5 kB)
+Collecting pluggy<2,>=1.5 (from pytest>=7->-r requirements.txt (line 7))
+  Downloading pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+WARNING: Cache entry deserialization failed, entry ignored
+Collecting pygments>=2.7.2 (from pytest>=7->-r requirements.txt (line 7))
+  Using cached pygments-2.21.0-py3-none-any.whl.metadata (2.5 kB)
+Collecting cloudpickle>=3.0 (from joblib>=1.4.0->scikit-learn>=1.3->-r requirements.txt (line 3))
+  Using cached cloudpickle-3.1.2-py3-none-any.whl.metadata (7.1 kB)
+Collecting six>=1.5 (from python-dateutil>=2.8.2->pandas>=2.0->-r requirements.txt (line 4))
+  Using cached six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+Downloading numpy-2.5.3-cp314-cp314-win_amd64.whl (12.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.7/12.7 MB 5.7 MB/s  0:00:02
+Downloading scipy-1.18.1-cp314-cp314-win_amd64.whl (37.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 37.4/37.4 MB 5.6 MB/s  0:00:06
+Downloading scikit_learn-1.9.1-cp314-cp314-win_amd64.whl (8.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8.4/8.4 MB 4.9 MB/s  0:00:01
+Downloading pandas-3.0.6-cp314-cp314-win_amd64.whl (9.8 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9.8/9.8 MB 5.1 MB/s  0:00:01
+Downloading matplotlib-3.11.2-cp314-cp314-win_amd64.whl (9.5 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9.5/9.5 MB 6.1 MB/s  0:00:01
+Downloading gmpy2-2.3.1-cp314-cp314-win_amd64.whl (1.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 5.6 MB/s  0:00:00
+Downloading pytest-9.1.1-py3-none-any.whl (386 kB)
+Downloading pluggy-1.6.0-py3-none-any.whl (20 kB)
+Using cached colorama-0.4.6-py2.py3-none-any.whl (25 kB)
+Downloading contourpy-1.4.0-cp314-cp314-win_amd64.whl (240 kB)
+Using cached cycler-0.12.1-py3-none-any.whl (8.3 kB)
+Downloading fonttools-4.66.1-cp314-cp314-win_amd64.whl (2.5 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.5/2.5 MB 5.9 MB/s  0:00:00
+Downloading iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+Downloading joblib-1.6.0-py3-none-any.whl (306 kB)
+Using cached cloudpickle-3.1.2-py3-none-any.whl (22 kB)
+Downloading kiwisolver-1.5.1-cp314-cp314-win_amd64.whl (72 kB)
+Downloading narwhals-2.26.0-py3-none-any.whl (474 kB)
+Downloading packaging-26.3-py3-none-any.whl (129 kB)
+Downloading pillow-12.3.0-cp314-cp314-win_amd64.whl (7.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7.2/7.2 MB 5.6 MB/s  0:00:01
+Using cached pygments-2.21.0-py3-none-any.whl (1.3 MB)
+Downloading pyparsing-3.3.3-py3-none-any.whl (126 kB)
+Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+Using cached six-1.17.0-py2.py3-none-any.whl (11 kB)
+Downloading threadpoolctl-3.7.0-py3-none-any.whl (26 kB)
+Downloading tzdata-2026.4-py2.py3-none-any.whl (347 kB)
+Installing collected packages: tzdata, threadpoolctl, six, pyparsing, pygments, pluggy, pillow, packaging, numpy, narwhals, kiwisolver, iniconfig, gmpy2, fonttools, cycler, colorama, cloudpickle, scipy, python-dateutil, pytest, joblib, contourpy, scikit-learn, pandas, matplotlib
+Successfully installed cloudpickle-3.1.2 colorama-0.4.6 contourpy-1.4.0 cycler-0.12.1 fonttools-4.66.1 gmpy2-2.3.1 iniconfig-2.3.0 joblib-1.6.0 kiwisolver-1.5.1 matplotlib-3.11.2 narwhals-2.26.0 numpy-2.5.3 packaging-26.3 pandas-3.0.6 pillow-12.3.0 pluggy-1.6.0 pygments-2.21.0 pyparsing-3.3.3 pytest-9.1.1 python-dateutil-2.9.0.post0 scikit-learn-1.9.1 scipy-1.18.1 six-1.17.0 threadpoolctl-3.7.0 tzdata-2026.4
+WARNING: Cache entry deserialization failed, entry ignored
+
+[notice] A new release of pip is available: 25.2 -> 26.2.1
+[notice] To update, run: python.exe -m pip install --upgrade pip
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> python -m pytest 
+======================================================================== test session starts ========================================================================
+platform win32 -- Python 3.14.0, pytest-9.1.1, pluggy-1.6.0
+rootdir: C:\Users\SURYA\Documents\Federated_Learning\Fed_code
+configfile: pyproject.toml
+testpaths: tests
+collected 0 items / 2 errors                                                                                                                                         
+
+============================================================================== ERRORS ===============================================================================
+_____________________________________________________________ ERROR collecting tests/test_components.py _____________________________________________________________
+.venv\Lib\site-packages\_pytest\python.py:508: in importtestmodule
+    mod = import_path(
+.venv\Lib\site-packages\_pytest\pathlib.py:596: in import_path
+    importlib.import_module(module_name)
+..\..\..\AppData\Local\Programs\Python\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1398: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1342: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:938: in _load_unlocked
+    ???
+.venv\Lib\site-packages\_pytest\assertion\rewrite.py:188: in exec_module
+    exec(co, module.__dict__)
+tests\test_components.py:4: in <module>
+    from fedrf_diff import zkp
+fedrf_diff\__init__.py:5: in <module>
+    from .pipeline import RunResult, run
+fedrf_diff\pipeline.py:12: in <module>
+    from .client import Client
+E     File "C:\Users\SURYA\Documents\Federated_Learning\Fed_code\fedrf_diff\client.py", line 1
+E       self.snapshot: tuple[ForestEncoder, np.ndarray] | None = None
+E   IndentationError: unexpected indent
+______________________________________________________________ ERROR collecting tests/test_pipeline.py ______________________________________________________________
+.venv\Lib\site-packages\_pytest\python.py:508: in importtestmodule
+    mod = import_path(
+.venv\Lib\site-packages\_pytest\pathlib.py:596: in import_path
+    importlib.import_module(module_name)
+..\..\..\AppData\Local\Programs\Python\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1398: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1342: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:938: in _load_unlocked
+    ???
+.venv\Lib\site-packages\_pytest\assertion\rewrite.py:188: in exec_module
+    exec(co, module.__dict__)
+tests\test_pipeline.py:3: in <module>
+    from fedrf_diff import Config, run
+fedrf_diff\__init__.py:5: in <module>
+    from .pipeline import RunResult, run
+fedrf_diff\pipeline.py:12: in <module>
+    from .client import Client
+E     File "C:\Users\SURYA\Documents\Federated_Learning\Fed_code\fedrf_diff\client.py", line 1
+E       self.snapshot: tuple[ForestEncoder, np.ndarray] | None = None
+E   IndentationError: unexpected indent
+====================================================================== short test summary info ======================================================================
+ERROR tests/test_components.py
+ERROR tests/test_pipeline.py
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+========================================================================= 2 errors in 4.51s =========================================================================
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> cd C:\Users\SURYA\Documents\Federated_LearningRemove-Item -Recurse -Force Fed_code\fedrf_diff, Fed_code\testsExpand-Archive -Path Fed_Code.zip -DestinationPath . -Forcecd Fed_code
+Set-Location : A positional parameter cannot be found that accepts argument 'C:\Users\SURYA\Documents\Federated_LearningRemove-Item'.                                 
+At line:1 char:1                                                                                                                                                      
++ cd C:\Users\SURYA\Documents\Federated_LearningRemove-Item -Recurse -F ...                                                                                           
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                                                                                               
+    + CategoryInfo          : InvalidArgument: (:) [Set-Location], ParameterBindingException                                                                          
+    + FullyQualifiedErrorId : PositionalParameterNotFound,Microsoft.PowerShell.Commands.SetLocationCommand
+ 
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> cd C:\Users\SURYA\Documents\Federated_Learning                                                       
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning> Remove-Item -Recurse -Force Fed_code\fedrf_diff, Fed_code\tests
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning> Expand-Archive -Path Fed_Code.zip -DestinationPath . -Force
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning> cd Fed_code
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> python -m pytest
+======================================================================== test session starts ========================================================================
+platform win32 -- Python 3.14.0, pytest-9.1.1, pluggy-1.6.0
+rootdir: C:\Users\SURYA\Documents\Federated_Learning\Fed_code
+configfile: pyproject.toml
+testpaths: tests
+collected 18 items                                                                                                                                                   
+
+tests\test_components.py ...............                                                                                                                       [ 83%]
+tests\test_pipeline.py ...                                                                                                                                     [100%]
+
+======================================================================== 18 passed in 29.10s ========================================================================
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> python -m fedrf_diff --zkp-group test512
+clients (train/val): Hungary 209/53, Switzerland 88/22, VA Long Beach 140/36, Cleveland 409/103; landmarks 100
+round   1  dZ=   n/a    L_avg=0.4183  dL=   n/a    patience=0/3  (3.8s, zkp 0.9s)
+round   2  dZ=5.16e-01  L_avg=0.4231  dL=4.83e-03  patience=0/3  (4.0s, zkp 0.9s)
+round   3  dZ=2.89e-01  L_avg=0.4356  dL=1.25e-02  patience=0/3  (3.9s, zkp 0.9s)
+round   4  dZ=1.27e-01  L_avg=0.4332  dL=2.45e-03  patience=1/3  (4.0s, zkp 0.9s)
+round   5  dZ=1.62e-01  L_avg=0.4266  dL=6.59e-03  patience=0/3  (4.0s, zkp 0.9s)
+round   6  dZ=1.73e-01  L_avg=0.4311  dL=4.52e-03  patience=0/3  (4.0s, zkp 0.9s)
+round   7  dZ=1.68e-01  L_avg=0.4316  dL=5.04e-04  patience=0/3  (3.9s, zkp 0.9s)
+round   8  dZ=1.44e-01  L_avg=0.4279  dL=3.70e-03  patience=1/3  (4.1s, zkp 1.0s)
+round   9  dZ=1.21e-01  L_avg=0.4318  dL=3.89e-03  patience=2/3  (3.9s, zkp 0.9s)
+round  10  dZ=1.46e-01  L_avg=0.4279  dL=3.94e-03  patience=3/3  (3.9s, zkp 0.9s)
+converged at round 10
+converged after 10 rounds; outputs in outputs\run/
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> (.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> python -m fedrf_diff --zkp-group test512
+At line:1 char:9
++ (.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> pyth ...
++         ~~
+Unexpected token 'PS' in expression or statement.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : UnexpectedToken
+ 
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> clients (train/val): Hungary 209/53, Switzerland 88/22, VA Long Beach 140/36, Cleveland 409/103; landmarks 100
+train/val : The term 'train/val' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path 
+was included, verify that the path is correct and try again.
+At line:1 char:10
++ clients (train/val): Hungary 209/53, Switzerland 88/22, VA Long Beach ...
++          ~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (train/val:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+landmarks : The term 'landmarks' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path 
+was included, verify that the path is correct and try again.
+At line:1 char:98
++ ... zerland 88/22, VA Long Beach 140/36, Cleveland 409/103; landmarks 100
++                                                             ~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (landmarks:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> round   1  dZ=   n/a    L_avg=0.4183  dL=   n/a    patience=0/3  (3.8s, zkp 0.9s)
+At line:1 char:71
++ ...  dZ=   n/a    L_avg=0.4183  dL=   n/a    patience=0/3  (3.8s, zkp 0.9 ...
++                                                                 ~
+Missing argument in parameter list.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : MissingArgument
+ 
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> round   2  dZ=5.16e-01  L_avg=0.4231  dL=4.83e-03  patience=0/3  (4.0s, zkp 0.9s)
+At line:1 char:71
++ ...  dZ=5.16e-01  L_avg=0.4231  dL=4.83e-03  patience=0/3  (4.0s, zkp 0.9 ...
++                                                                 ~
+Missing argument in parameter list.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : MissingArgument
+ 
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> round   3  dZ=2.89e-01  L_avg=0.4356  dL=1.25e-02  patience=0/3  (3.9s, zkp 0.9s)
+At line:1 char:71
++ ...  dZ=2.89e-01  L_avg=0.4356  dL=1.25e-02  patience=0/3  (3.9s, zkp 0.9 ...
++                                                                 ~
+Missing argument in parameter list.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : MissingArgument
+ 
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> round   4  dZ=1.27e-01  L_avg=0.4332  dL=2.45e-03  patience=1/3  (4.0s, zkp 0.9s)
+At line:1 char:71
++ ...  dZ=1.27e-01  L_avg=0.4332  dL=2.45e-03  patience=1/3  (4.0s, zkp 0.9 ...
++                                                                 ~
+Missing argument in parameter list.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : MissingArgument
+ 
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> round   5  dZ=1.62e-01  L_avg=0.4266  dL=6.59e-03  patience=0/3  (4.0s, zkp 0.9s)
+At line:1 char:71
++ ...  dZ=1.62e-01  L_avg=0.4266  dL=6.59e-03  patience=0/3  (4.0s, zkp 0.9 ...
++                                                                 ~
+Missing argument in parameter list.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : MissingArgument
+ 
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> round   6  dZ=1.73e-01  L_avg=0.4311  dL=4.52e-03  patience=0/3  (4.0s, zkp 0.9s)
+At line:1 char:71
++ ...  dZ=1.73e-01  L_avg=0.4311  dL=4.52e-03  patience=0/3  (4.0s, zkp 0.9 ...
++                                                                 ~
+Missing argument in parameter list.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : MissingArgument
+ 
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> round   7  dZ=1.68e-01  L_avg=0.4316  dL=5.04e-04  patience=0/3  (3.9s, zkp 0.9s)
+At line:1 char:71
++ ...  dZ=1.68e-01  L_avg=0.4316  dL=5.04e-04  patience=0/3  (3.9s, zkp 0.9 ...
++                                                                 ~
+Missing argument in parameter list.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : MissingArgument
+ 
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> round   8  dZ=1.44e-01  L_avg=0.4279  dL=3.70e-03  patience=1/3  (4.1s, zkp 1.0s)
+At line:1 char:71
++ ...  dZ=1.44e-01  L_avg=0.4279  dL=3.70e-03  patience=1/3  (4.1s, zkp 1.0 ...
++                                                                 ~
+Missing argument in parameter list.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : MissingArgument
+ 
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> round   9  dZ=1.21e-01  L_avg=0.4318  dL=3.89e-03  patience=2/3  (3.9s, zkp 0.9s)
+At line:1 char:71
++ ...  dZ=1.21e-01  L_avg=0.4318  dL=3.89e-03  patience=2/3  (3.9s, zkp 0.9 ...
++                                                                 ~
+Missing argument in parameter list.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : MissingArgument
+ 
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> round  10  dZ=1.46e-01  L_avg=0.4279  dL=3.94e-03  patience=3/3  (3.9s, zkp 0.9s)
+At line:1 char:71
++ ...  dZ=1.46e-01  L_avg=0.4279  dL=3.94e-03  patience=3/3  (3.9s, zkp 0.9 ...
++                                                                 ~
+Missing argument in parameter list.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : MissingArgument
+ 
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> converged at round 10
+converged : The term 'converged' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path 
+was included, verify that the path is correct and try again.
+At line:1 char:1
++ converged at round 10
++ ~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (converged:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> converged after 10 rounds; outputs in outputs\run/
+converged : The term 'converged' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path 
+was included, verify that the path is correct and try again.
+At line:1 char:1
++ converged after 10 rounds; outputs in outputs\run/
++ ~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (converged:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+outputs : The term 'outputs' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was 
+included, verify that the path is correct and try again.
+At line:1 char:28
++ converged after 10 rounds; outputs in outputs\run/
++                            ~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (outputs:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> (.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> 
+At line:1 char:9
++ (.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code>
++         ~~
+Unexpected token 'PS' in expression or statement.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : UnexpectedToken
+ 
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> python -m fedrf_diff --output-dir outputs/secure
+clients (train/val): Hungary 209/53, Switzerland 88/22, VA Long Beach 140/36, Cleveland 409/103; landmarks 100
+round   1  dZ=   n/a    L_avg=0.4183  dL=   n/a    patience=0/3  (36.6s, zkp 33.5s)
+round   2  dZ=5.16e-01  L_avg=0.4231  dL=4.83e-03  patience=0/3  (46.5s, zkp 42.5s)
+round   3  dZ=2.89e-01  L_avg=0.4356  dL=1.25e-02  patience=0/3  (54.0s, zkp 49.7s)
+round   4  dZ=1.27e-01  L_avg=0.4332  dL=2.45e-03  patience=1/3  (53.7s, zkp 49.2s)
+round   5  dZ=1.62e-01  L_avg=0.4266  dL=6.59e-03  patience=0/3  (53.8s, zkp 49.2s)
+round   6  dZ=1.73e-01  L_avg=0.4311  dL=4.52e-03  patience=0/3  (60.0s, zkp 52.7s)
+round   7  dZ=1.68e-01  L_avg=0.4316  dL=5.04e-04  patience=0/3  (75.9s, zkp 70.4s)
+round   8  dZ=1.44e-01  L_avg=0.4279  dL=3.70e-03  patience=1/3  (53.9s, zkp 49.5s)
+round   9  dZ=1.21e-01  L_avg=0.4318  dL=3.89e-03  patience=2/3  (53.4s, zkp 49.2s)
+round  10  dZ=1.46e-01  L_avg=0.4279  dL=3.94e-03  patience=3/3  (72.4s, zkp 68.0s)
+converged at round 10
+converged after 10 rounds; outputs in outputs\secure/
+(.venv) PS C:\Users\SURYA\Documents\Federated_Learning\Fed_code> 

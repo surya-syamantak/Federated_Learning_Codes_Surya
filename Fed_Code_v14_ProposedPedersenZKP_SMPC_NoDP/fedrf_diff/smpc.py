@@ -1,28 +1,28 @@
 """Stage 4: simple SMPC - secure aggregation by n-out-of-n additive secret sharing.
 
 The server needs only *totals* of what the clients report after the local
-evaluation (Stage 3): the weighted validation loss for L_avg and the summed
+evaluation (Stage 3): the weighted validation loss for L_glob and the summed
 TP/FP/TN/FN counts for the Global Server metrics. With this module it learns
 those totals and nothing else; no client's own loss or counts reach it.
 
-Every authenticated client c holds a vector x_c of m values
+Every authenticated client k holds a vector v_k of m values
 
-    x_c = (n_c * L_c, n_val_c * L_c, TP_c, FP_c, TN_c, FN_c)
+    v_k = (N_k * L_k, N_val,k * L_k, TP_k, FP_k, TN_k, FN_k)
 
-(n_c = training-set size, the weight of L_c in L_avg; n_val_c = validation
+(N_k = training-set size, the weight of L_k in L_glob; N_val,k = validation
 size). One aggregation, for the N authenticated clients:
 
     1. encode   reals in fixed point (round(v * 2^32)), integers as they are,
                 every value as an element of Z_P, P = 2^127 - 1 (a Mersenne prime)
-    2. share    draw N - 1 uniformly random vectors s_{c,1..N-1} in Z_P^m and set
-                s_{c,N} = x_c - sum_j s_{c,j} (mod P); keep one share and send
+    2. share    draw N - 1 uniformly random vectors s_{k,1..N-1} in Z_P^m and set
+                s_{k,N} = v_k - sum_j s_{k,j} (mod P); keep one share and send
                 one share to each other client (pairwise secure channels)
-    3. sum      each client j adds the shares it holds: y_j = sum_c s_{c,j} (mod P),
+    3. sum      each client j adds the shares it holds: y_j = sum_k s_{k,j} (mod P),
                 and sends y_j to the server
-    4. reconstruct  the server computes sum_j y_j = sum_c x_c (mod P) and decodes it
+    4. reconstruct  the server computes sum_j y_j = sum_k v_k (mod P) and decodes it
 
 Each single share, and each partial sum y_j, is a uniformly random element of
-Z_P^m, so the server learns only sum_c x_c; any N - 1 shares of a client's
+Z_P^m, so the server learns only sum_k v_k; any N - 1 shares of a client's
 vector are independent of it. A coalition of the server and up to N - 2
 clients learns nothing about the remaining honest clients beyond the sum of
 their vectors. The scheme assumes honest-but-curious parties and no drop-outs

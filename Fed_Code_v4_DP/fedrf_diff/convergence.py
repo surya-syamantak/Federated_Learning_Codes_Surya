@@ -1,19 +1,19 @@
 """Stage 4: dual convergence criterion (Delta Z and Delta L) with patience.
 
-    Delta Z^(t) = ||Z_G^(t) - Z_G^(t-1)||_F / (||Z_G^(t-1)||_F + eps_0)
-    Delta L^(t) = |L_avg^(t) - L_avg^(t-1)|
+    Delta Z^(r) = ||Z_glob^(r) - Z_glob^(r-1)||_F / (||Z_glob^(r-1)||_F + eps_0)
+    Delta L^(r) = |L_glob^(r) - L_glob^(r-1)|
 
 Stop when both are below their thresholds for ``patience`` consecutive rounds.
 
-With Gaussian DP every patient row of Z_G carries fresh N(0, sigma^2) noise
+With Gaussian DP every patient row of Z_glob carries fresh N(0, sigma^2) noise
 each round. sigma is public, so the server removes the noise's known
 expected energy before comparing rounds (N noisy rows, d coordinates):
 
-    Delta Z = sqrt(max(0, ||dZ_G||^2 - 2 N d sigma^2)) / sqrt(max(eps_0, ||Z_G^(t-1)||^2 - N d sigma^2))
+    Delta Z = sqrt(max(0, ||dZ_G||^2 - 2 N d sigma^2)) / sqrt(max(eps_0, ||Z_glob^(r-1)||^2 - N d sigma^2))
 
 The noise also perturbs the decoded data that feeds the next round, so Delta Z
 still settles higher under DP: about 0.11 + sigma / C on seed 42 (C = clip
-norm). The threshold is therefore eps_Z + sigma / C, which reduces to eps_Z
+norm). The threshold is therefore eps_z + sigma / C, which reduces to eps_z
 without DP.
 """
 
@@ -40,7 +40,7 @@ def relative_change(new: np.ndarray, old: np.ndarray, eps_0: float,
 
 
 def weighted_loss(losses: dict[str, float], sizes: dict[str, int]) -> float:
-    """L_avg = sum_c (n_c / sum_r n_r) L_c over the clients that reported."""
+    """L_glob = sum_k (N_k / Σ_j N_j) L_k over the clients that reported."""
     total = sum(sizes[c] for c in losses)
     return float(sum(sizes[c] / total * losses[c] for c in losses))
 

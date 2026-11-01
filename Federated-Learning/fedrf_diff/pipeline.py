@@ -1,12 +1,12 @@
 """Federated Random Forest with tree-level aggregation (Steps 1-7) and the DP-budget experiment.
 
     t = 0   every client trains F_k^(0); G^(0) is empty; q_k = 0
-    t >= 1  2  clients upload F_k^(t-1)                  (whole explicit trees + schema, ZKP-signed)
-            3  server validates, pools U^(t), selects    G^(t) = SelectTrees(U^(t), A, B)
-            4  server broadcasts G^(t), t and the schema
-            5  clients refine                            F_k^(t) = CapOrPrune(TreePool(G^(t), H_k^(t)), B_k)
+    t >= 1  2  clients upload F_k^(r-1)                  (whole explicit trees + schema, ZKP-signed)
+            3  server validates, pools U^(r), selects    G^(r) = SelectTrees(U^(r), A, B)
+            4  server broadcasts G^(r), t and the schema
+            5  clients refine                            F_k^(r) = CapOrPrune(TreePool(G^(r), H_k^(r)), B_k)
             6  clients test loss stability, prediction stability and global/local agreement on their
-               own validation patients and send only b_k^(t) = [q_k >= P]
+               own validation patients and send only b_k^(r) = [q_k >= P]
             7  server stops when every b_k is True ("all-client convergence") or t = R_max
 
 The per-round validation tables are written by the experiment harness for the paper; in the
@@ -37,8 +37,8 @@ MAX_ROUNDS = "maximum rounds reached"
 class RunResult:
     rounds_run: int
     status: str
-    metrics: pd.DataFrame  # G^(t) on every client's validation patients + Global Server (harness only)
-    local: pd.DataFrame  # three-part test and F_k^(t) metrics per client and round
+    metrics: pd.DataFrame  # G^(r) on every client's validation patients + Global Server (harness only)
+    local: pd.DataFrame  # three-part test and F_k^(r) metrics per client and round
     tuning: pd.DataFrame  # local model selection per client and round
     zkp: pd.DataFrame
     transfer: pd.DataFrame
@@ -123,7 +123,7 @@ def run_federation(cfg, dp_spec, rounds, with_zkp=True, verbose=True, stop_early
         t_round = time.perf_counter()
         epsilon = schedule[rnd]
 
-        # Step 2 · every client uploads its complete forest F_k^(t-1)
+        # Step 2 · every client uploads its complete forest F_k^(r-1)
         up = {}
         for c in clients:
             u = up[c.cid] = {"n_trees": len(c.forest), "vectors": sum(t.n_leaves for t in c.forest)}
@@ -153,7 +153,7 @@ def run_federation(cfg, dp_spec, rounds, with_zkp=True, verbose=True, stop_early
         t_agg = time.perf_counter() - t0
         global_forest = server.global_forest
 
-        # Steps 4-5 · broadcast G^(t); every client refines F_k^(t)
+        # Steps 4-5 · broadcast G^(r); every client refines F_k^(r)
         global_ids = {t.tree_id for t in global_forest}
         for c in clients:
             t0 = time.perf_counter()
@@ -190,7 +190,7 @@ def run_federation(cfg, dp_spec, rounds, with_zkp=True, verbose=True, stop_early
 
         # Harness bookkeeping (never part of the protocol messages)
         round_metrics = {}
-        if global_forest:  # G^(t) is empty only if every upload was rejected
+        if global_forest:  # G^(r) is empty only if every upload was rejected
             round_metrics = {c.name: metrics_from_counts(global_counts[c.cid]) for c in clients}
             round_metrics[SERVER] = metrics_from_counts(np.sum(list(global_counts.values()), axis=0))
         for party, m in round_metrics.items():
@@ -235,8 +235,8 @@ def run_federation(cfg, dp_spec, rounds, with_zkp=True, verbose=True, stop_early
             dp = ("DP off" if epsilon is None else
                   f"DP budget: epsilon = {epsilon:.3f} per leaf vector this round (pure DP); per patient "
                   f"{eps_patient:.2f} this round, {accountant.total:.2f} in total")
-            line = (f"Server: U^(t) = {pool_size} candidate trees ({n_accepted}/{n_sent} uploaded trees valid) -> "
-                    f"G^(t) = {len(global_forest)} trees (B = {cfg['global_budget']}, policy "
+            line = (f"Server: U^(r) = {pool_size} candidate trees ({n_accepted}/{n_sent} uploaded trees valid) -> "
+                    f"G^(r) = {len(global_forest)} trees (B = {cfg['global_budget']}, policy "
                     f"{cfg['aggregation_policy']}) | convergence flags {sum(flags)}/{len(clients)} True | "
                     f"decision: {decision or 'continue'} | round time {round_time:.1f} s | {dp}")
             report.round_report(rnd, zkp_rows[-len(clients):] if with_zkp else [], transfer_rows[-len(clients):],
@@ -255,7 +255,7 @@ def run_federation(cfg, dp_spec, rounds, with_zkp=True, verbose=True, stop_early
 
 
 def run_dp_sweep(cfg, rounds, names):
-    """Accuracy of G^(t) for the same federation (same seed, no ZKP) under every DP budget."""
+    """Accuracy of G^(r) for the same federation (same seed, no ZKP) under every DP budget."""
     avg_rows, last_rows = [], []
     for spec in cfg["dp_sweep"]:
         res = run_federation(cfg, spec, rounds, with_zkp=False, verbose=False, stop_early=False)
@@ -318,7 +318,7 @@ def main(cfg=CONFIG):
     sweep = None
     if cfg["run_dp_sweep"]:
         n_budgets = sum(spec is not None for spec in cfg["dp_sweep"])
-        print(f"\nAccuracy of G^(t) vs DP budget: {n_budgets} budgets + No DP, {n} rounds each, seed {cfg['seed']} "
+        print(f"\nAccuracy of G^(r) vs DP budget: {n_budgets} budgets + No DP, {n} rounds each, seed {cfg['seed']} "
               f"(no ZKP; takes a few minutes) ...")
         sweep = run_dp_sweep(cfg, n, names)
         report.dp_sweep_report(*sweep, n)

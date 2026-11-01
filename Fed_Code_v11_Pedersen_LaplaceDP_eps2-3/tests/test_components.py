@@ -158,13 +158,13 @@ def test_honest_proof_is_valid_and_follows_the_diagram(pp):
     u, r, C, digest, proof = _prove(pp, Z, y, ctx)
     assert 0 <= u < 2**zkp.RANGE_BITS and u == zkp.encode_update(Z.copy(), y.copy())
     p, q, g, h = int(pp.p), int(pp.q), int(pp.g), int(pp.h)
-    assert int(C) == pow(g, u, p) * pow(h, int(r), p) % p  # C_c = g^{u_c} h^{r_c} mod p
-    # Sigma-protocol equation g^{z_u} h^{z_r} = T C_c^e with the Fiat-Shamir challenge.
+    assert int(C) == pow(g, u, p) * pow(h, int(r), p) % p  # C_k = g^{u_k} h^{r_k} mod p
+    # Sigma-protocol equation g^{z_u} h^{z_r} = T C_k^e with the Fiat-Shamir challenge.
     e = int(zkp.challenge(pp, ctx, digest, C, proof.T,
                           *(x for bp in proof.bits for x in (bp.C, bp.A0, bp.A1))))
     lhs = pow(g, int(proof.z_u), p) * pow(h, int(proof.z_r), p) % p
     assert lhs == int(proof.T) * pow(int(C), e, p) % p
-    # Homomorphism: prod_i C_i^{2^i} = C_c.
+    # Homomorphism: prod_i C_i^{2^i} = C_k.
     prod = 1
     for i, bp in enumerate(proof.bits):
         prod = prod * pow(int(bp.C), 2**i, p) % p
@@ -177,7 +177,7 @@ def test_honest_proof_is_valid_and_follows_the_diagram(pp):
 
 
 def test_commitment_hides_u(pp):
-    # Fresh r_c each time: the same update gives unrelated commitments and proofs.
+    # Fresh r_k each time: the same update gives unrelated commitments and proofs.
     Z, y = _update()
     ctx = zkp.context_for("c", 1)
     first, second = _prove(pp, Z, y, ctx), _prove(pp, Z, y, ctx)
@@ -210,8 +210,8 @@ def test_out_of_range_value_is_rejected(pp):
     u, r, C, digest, proof = _prove(pp, Z, y, ctx)
     B = 2**zkp.RANGE_BITS
     with pytest.raises(ValueError, match="valid range"):
-        zkp.prove(pp, B, r, pp.commit(B, r), digest, ctx)  # an honest client cannot prove u_c >= B
-    # A commitment to u_c + B with the bit proofs of u_c fails the homomorphic check.
+        zkp.prove(pp, B, r, pp.commit(B, r), digest, ctx)  # an honest client cannot prove u_k >= B
+    # A commitment to u_k + B with the bit proofs of u_k fails the homomorphic check.
     C_big = pp.commit(u + B, r)
     assert not zkp.verify(pp, C_big, proof, digest, ctx)
 

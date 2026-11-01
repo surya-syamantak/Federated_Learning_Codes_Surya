@@ -7,7 +7,7 @@
     v15  Fed_Code_v15_ProposedPedersenZKP_ProposedSMPC_NoDP
          Adaptive Prime Secure Aggregation with Self-Randomized Pairwise Masking:
          one-time Diffie-Hellman pairwise keys, a prime pool from a public seed, an
-         adaptive prime p_t per round, quantization with S_q, pairwise PRG masks that
+         adaptive prime p_r per round, quantization with S_quant, pairwise PRG masks that
          cancel in the sum; every client sends the server one masked vector.
 
 Both protect the same values (each client's weighted validation loss and
@@ -29,7 +29,7 @@ Compared:
    folders) for N = 2 ... 32 clients: per-client and server time, bytes per
    client, one-time setup - fair timings and the scaling with N.
 5. Metrics: the averaged and last-round metrics of both runs (identical up to
-   quantization) and the per-round L_avg difference.
+   quantization) and the per-round L_glob difference.
 
 Outputs (--out, default SMPC_Comparison/outputs): CSV and LaTeX tables, four
 figures (600-dpi PNG + vector PDF) and the terminal log.
@@ -158,7 +158,7 @@ def load_run(root: Path, s: Scheme) -> Run:
         h["setup_s"] = raw["key_setup_s"].fillna(0.0)
         h["server_s"] = np.where(server, raw["aggregate_s"], np.nan)
         first = raw["round"] == raw["round"].min()
-        h["messages_sent"] = np.where(server, 0, 1 + first.astype(int))  # c_i (+ A_i once)
+        h["messages_sent"] = np.where(server, 0, 1 + first.astype(int))  # y_k (+ D_k once)
         n = raw.loc[~server, "client"].nunique()
         h["messages_received"] = np.where(server, 0, np.where(first, n - 1, 0))  # other A_j once
         h["prime_index"] = raw["prime_index"]
@@ -242,7 +242,7 @@ def metric_tables(runs: list[Run]) -> tuple[pd.DataFrame, pd.DataFrame, float]:
     for t in (avg, last):
         t["v15 - v14"] = t["v15"] - t["v14"]
     n = min(len(a.history), len(b.history))
-    dl = float(np.max(np.abs(a.history["L_avg"].to_numpy()[:n] - b.history["L_avg"].to_numpy()[:n])))
+    dl = float(np.max(np.abs(a.history["L_glob"].to_numpy()[:n] - b.history["L_glob"].to_numpy()[:n])))
     return avg, last, dl
 
 
@@ -250,8 +250,8 @@ def properties_table() -> pd.DataFrame:
     """The design differences, side by side (for the paper)."""
     rows = [
         ("Primitive", "n-out-of-n additive secret sharing", "self-randomized pairwise masking (PRG streams)"),
-        ("Modulus", "fixed prime 2^127 - 1", "adaptive prime p_t = Pool[H(seed||t) mod 3], 61-bit pool"),
-        ("Encoding", "fixed point 2^32 (reals), integers as is", "quantization S_q = 10^6"),
+        ("Modulus", "fixed prime 2^127 - 1", "adaptive prime p_r = Pool[H(seed||r) mod 3], 61-bit pool"),
+        ("Encoding", "fixed point 2^32 (reals), integers as is", "quantization S_quant = 10^6"),
         ("One-time setup", "none", "pairwise Diffie-Hellman keys (2048-bit ZKP group)"),
         ("Client-to-client messages per round", "N - 1 shares sent, N - 1 received", "none"),
         ("Client-to-server messages per round", "1 partial sum", "1 masked vector"),
@@ -313,7 +313,7 @@ def benchmark(root: Path, ns: list[int], rounds: int, seed: int = 42) -> pd.Data
         setup_wall = time.perf_counter() - t0
         setup_per_client = float(np.mean(list(aggregator.setup_s.values())))
         for t in range(1, rounds + 1):
-            # Values of the size seen in the runs: n_c L_c ~ 50-200, counts 0-60.
+            # Values of the size seen in the runs: N_k L_k ~ 50-200, counts 0-60.
             vectors = {c: [float(rng.uniform(20, 200)), float(rng.uniform(5, 60)),
                            *[int(v) for v in rng.integers(0, 60, 4)]] for c in names}
             order = ("v14", "v15") if t % 2 else ("v15", "v14")  # alternate to share machine conditions
@@ -549,11 +549,11 @@ def fig_metrics(runs: list[Run], avg: pd.DataFrame, last: pd.DataFrame, path: Pa
         ax = axes[2]
         a, b = runs
         n = min(len(a.history), len(b.history))
-        diff = np.abs(a.history["L_avg"].to_numpy()[:n] - b.history["L_avg"].to_numpy()[:n])
+        diff = np.abs(a.history["L_glob"].to_numpy()[:n] - b.history["L_glob"].to_numpy()[:n])
         ax.semilogy(np.arange(1, n + 1), np.maximum(diff, 1e-16), color="#333333", marker="o")
         ax.axhline(0.5 / 10**6, color="#D55E00", linestyle="--", linewidth=1.0, label="quantization step / 2")
         ax.set_xlabel("Round")
-        ax.set_ylabel("|L_avg(v15) - L_avg(v14)|")
+        ax.set_ylabel("|L_glob(v15) - L_glob(v14)|")
         ax.legend(loc="upper right", fontsize=6.5)
         _panel(ax, "c", "Same learning")
         _legend(fig, 0.96)
@@ -635,7 +635,7 @@ def main(argv: list[str] | None = None) -> None:
     for title, t in (("averaged over the rounds", avg), ("of the last round", last)):
         print(f"\n=== Validation metrics {title} (v14, v15, v15 - v14) ===")
         print(t.set_index(["entity", "metric"]).to_string(float_format=lambda v: f"{v:.6f}"))
-    print(f"\nmax |L_avg(v15) - L_avg(v14)| over the rounds: {dl:.3e}")
+    print(f"\nmax |L_glob(v15) - L_glob(v14)| over the rounds: {dl:.3e}")
 
     latex(ts.drop(columns="what"), a.out / "smpc_time_summary.tex",
           "SMPC times (ms) per client and Global Server: v14 additive sharing vs v15 proposed masking.",

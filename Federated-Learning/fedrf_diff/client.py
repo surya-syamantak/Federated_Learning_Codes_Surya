@@ -1,11 +1,11 @@
 """Federated client (one hospital).
 
     Step 1  train the initial forest F_k^(0) on the private training split
-    Step 2  upload the complete forest F_k^(t-1) (explicit trees + schema metadata) with a ZKP
-    Step 5  receive G^(t), train a supplementary forest H_k^(t) and build
-            F_k^(t) = CapOrPrune(TreePool(G^(t), H_k^(t)), B_k)
+    Step 2  upload the complete forest F_k^(r-1) (explicit trees + schema metadata) with a ZKP
+    Step 5  receive G^(r), train a supplementary forest H_k^(r) and build
+            F_k^(r) = CapOrPrune(TreePool(G^(r), H_k^(r)), B_k)
     Step 6  run the three-part convergence test on the fixed validation split and return only
-            the boolean flag b_k^(t)
+            the boolean flag b_k^(r)
 
 CapOrPrune keeps the B_k pool trees with the highest balanced accuracy on the client's
 training patients that each tree did not train on: its out-of-bag patients for a tree this
@@ -27,7 +27,7 @@ from .metrics import confusion_counts
 from .privacy import privatize_leaves
 from .rf_kernel import export_tree, train_local_forest, tree_to_message, tune_forest_params
 
-FLAG_BYTES = 1  # b_k^(t) is the only thing a client reports about its validation data
+FLAG_BYTES = 1  # b_k^(r) is the only thing a client reports about its validation data
 _TUNING_CACHE = {}  # tuning is a deterministic function of the training data and seed; the DP sweep reuses it
 
 
@@ -47,8 +47,8 @@ class HospitalClient:
         self.classes = np.asarray(schema.classes)
         self.train_raw, self.val_raw = train, val
         self.keypair = zkp.keygen(cfg["zkp_lambda"]) if with_zkp else None
-        self.forest = []  # F_k^(t)
-        self.global_forest = []  # G^(t) as last received
+        self.forest = []  # F_k^(r)
+        self.global_forest = []  # G^(r) as last received
         self.convergence = LocalConvergence(cfg["tau_loss"], cfg["tau_pred"], cfg["tau_agree"], cfg["patience"])
         self._in_bag = {}  # tree_id -> training rows a tree grown here was fitted on
         self._val_proba = {}  # tree_id -> class probabilities on the validation patients (cache)
@@ -87,7 +87,7 @@ class HospitalClient:
         self.rf_params = self.tuning[0]
 
     def grow(self, rnd, n_trees, epsilon):
-        """F_k^(0) at round 0, the supplementary forest H_k^(t) afterwards (after local tuning)."""
+        """F_k^(0) at round 0, the supplementary forest H_k^(r) afterwards (after local tuning)."""
         self.tune(rnd)
         rf = train_local_forest(self.X_train, self.y_train, n_trees, int(self._seed(rnd, 0).generate_state(1)[0]),
                                 self.rf_params)
@@ -134,7 +134,7 @@ class HospitalClient:
         return ranked[:budget]
 
     def refine(self, global_forest, rnd, epsilon):
-        """F_k^(t) = CapOrPrune(TreePool(G^(t), H_k^(t)), B_k); returns H_k^(t)."""
+        """F_k^(r) = CapOrPrune(TreePool(G^(r), H_k^(r)), B_k); returns H_k^(r)."""
         self.global_forest = list(global_forest)
         supplementary = self.grow(rnd, self.cfg["supplementary_trees"], epsilon)
         pool = {t.tree_id: t for t in self.global_forest + supplementary}

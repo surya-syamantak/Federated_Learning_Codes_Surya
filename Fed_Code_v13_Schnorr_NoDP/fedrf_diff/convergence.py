@@ -1,11 +1,11 @@
 """Stage 4: dual convergence criterion (Delta Z and Delta L) with patience.
 
-    Delta Z^(t) = ||Z_G^(t) - Z_G^(t-1)||_F / (||Z_G^(t-1)||_F + eps_0)
-    Delta L^(t) = |L_avg^(t) - L_avg^(t-1)|
+    Delta Z^(r) = ||Z_glob^(r) - Z_glob^(r-1)||_F / (||Z_glob^(r-1)||_F + eps_0)
+    Delta L^(r) = |L_glob^(r) - L_glob^(r-1)|
 
 Stop when both are below their thresholds for ``patience`` consecutive rounds.
 No differential privacy: the latents carry no noise, so Delta Z is the plain
-relative change and the threshold is eps_Z.
+relative change and the threshold is eps_z.
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ def relative_change(new: np.ndarray, old: np.ndarray, eps_0: float) -> float:
 
 
 def weighted_loss(losses: dict[str, float], sizes: dict[str, int]) -> float:
-    """L_avg = sum_c (n_c / sum_r n_r) L_c over the clients that reported."""
+    """L_glob = sum_k (N_k / Σ_j N_j) L_k over the clients that reported."""
     total = sum(sizes[c] for c in losses)
     return float(sum(sizes[c] / total * losses[c] for c in losses))
 

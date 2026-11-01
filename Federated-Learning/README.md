@@ -15,28 +15,28 @@ python -m pytest            # unit and pipeline tests
 ## Algorithm
 
 1. **Initialisation (t = 0)**: each client trains `F_k^(0)` (25 trees) on its private data. `G^(0)` is empty and `q_k = 0`.
-2. **Client → server**: at the start of round t each client uploads its complete forest `F_k^(t-1)` with its
+2. **Client → server**: at the start of round r each client uploads its complete forest `F_k^(r-1)` with its
    schema metadata, signed with a Proposed Pedersen ZKP. It sends no raw data and no latent encodings.
 3. **Tree-level aggregation**: the server validates every tree (schema, classes, node references, splits, leaves,
    size and depth, provenance: a copy of a known tree must be identical, and only its creator may introduce a tree id).
-   It pools `U^(t) = ∪ T_k^(t-1)` and selects `G^(t) = SelectTrees(U^(t), A, B = 100)`. Policy `A = consensus`
+   It pools `U^(r) = ∪ T_k^(r-1)` and selects `G^(r) = SelectTrees(U^(r), A, B = 100)`. Policy `A = consensus`
    is a round-robin over creating clients that prefers the trees kept by the most client forests, newest first.
    The `client-balanced` and `newest` policies are also available.
-4. **Broadcast**: `G^(t)`, round t and the verified schema go to every client.
+4. **Broadcast**: `G^(r)`, round r and the verified schema go to every client.
 5. **Local refinement**: each client first selects its Random Forest hyperparameters with a stratified 5-fold
    grid search on its own training patients (`max_features` × `min_samples_leaf`, 12 settings, balanced accuracy).
    The cross-validation forests are never shared, so they cost no DP budget. This local model selection is the bulk of
    the round time, about 30 s per round on a 4-core machine; adjust `local_tuning` in `config.py` to change it.
-   The client then grows a supplementary forest `H_k^(t)` (25 trees) and builds
-   `F_k^(t) = CapOrPrune(TreePool(G^(t), H_k^(t)), B_k = 50)`. This keeps the trees with the highest balanced
+   The client then grows a supplementary forest `H_k^(r)` (25 trees) and builds
+   `F_k^(r) = CapOrPrune(TreePool(G^(r), H_k^(r)), B_k = 50)`. This keeps the trees with the highest balanced
    accuracy on the client's training patients that each tree did not train on: out-of-bag patients for its own
    trees, all training patients for foreign trees. Validation data is never used for pruning.
 6. **Three-part convergence test** (each client, on its fixed validation split):
    relative log-loss change `≤ τ_loss = 0.05`, share of changed predictions `≤ τ_pred = 0.05`, and share of
-   predictions where `F_k^(t)` and `G^(t)` disagree `≤ τ_agree = 0.15`. All pass → `q_k += 1`, otherwise `q_k = 0`.
+   predictions where `F_k^(r)` and `G^(r)` disagree `≤ τ_agree = 0.15`. All pass → `q_k += 1`, otherwise `q_k = 0`.
    The client sends only `b_k = [q_k ≥ P = 3]`.
 7. **Stopping**: the server tallies the flags. If every client reports True it stops with "all-client convergence";
-   at `t = R_max = 50` it stops with "maximum rounds reached". It returns `G^(t)` and every `F_k^(t)`.
+   at `t = R_max = 50` it stops with "maximum rounds reached". It returns `G^(r)` and every `F_k^(r)`.
 
 Each newly grown tree gets Laplace DP on its leaf vectors (`b = 2C/ε`, `C = 1`, `ε ~ U[2, 3]` per round).
 All parameters are in `fedrf_diff/config.py`.
@@ -59,8 +59,8 @@ Statlog is Cleveland Clinic data, so it joins the Cleveland client, and its copi
 
 ## Outputs (`outputs/run/`)
 
-`validation_metrics.csv` (G^(t) per client and Global Server), `local_tuning.csv` (selected hyperparameters, CV score and tuning time), `local_convergence.csv` (the three tests, q_k, b_k
-and F_k^(t) metrics), `rounds.csv` (|U|, |G|, flags, decision, DP budget), `zkp_times.csv`, `tree_transfer_times.csv`,
+`validation_metrics.csv` (G^(r) per client and Global Server), `local_tuning.csv` (selected hyperparameters, CV score and tuning time), `local_convergence.csv` (the three tests, q_k, b_k
+and F_k^(r) metrics), `rounds.csv` (|U|, |G|, flags, decision, DP budget), `zkp_times.csv`, `tree_transfer_times.csv`,
 `communication_computation_cost.csv`, `dp_budget_accuracy.csv`, `console_output.txt`, and `forests/`
 (the returned G and every F_k as explicit trees). The figures are `convergence`, `zkp_times`, `computation_cost`,
 `communication_cost` and `accuracy_vs_dp_budget`.
@@ -77,7 +77,7 @@ uploaded forest against two public bounds derived from the configuration (`serve
   is the client's last accepted round.
 
 An upload outside either bound is rejected as a whole: none of its trees enter the candidate
-pool U^(t), and none of its new tree ids are registered.
+pool U^(r), and none of its new tree ids are registered.
 
 Each round prints a "Bounded-update enforcement (per client)" table, and the run summary adds a
 "Bounded-update enforcement summary". The checks are also saved as extra columns in

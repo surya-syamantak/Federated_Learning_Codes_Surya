@@ -6,53 +6,53 @@ Comparable runs (same seed, rounds, learning settings and DP).
 
 Same-machine benchmark: 30 rounds x 4 clients per ZKP ...
   benchmark round 1/30  benchmark round 2/30  benchmark round 3/30  benchmark round 4/30  benchmark round 5/30  benchmark round 6/30  benchmark round 7/30  benchmark round 8/30  benchmark round 9/30  benchmark round 10/30  benchmark round 11/30  benchmark round 12/30  benchmark round 13/30  benchmark round 14/30  benchmark round 15/30  benchmark round 16/30  benchmark round 17/30  benchmark round 18/30  benchmark round 19/30  benchmark round 20/30  benchmark round 21/30  benchmark round 22/30  benchmark round 23/30  benchmark round 24/30  benchmark round 25/30  benchmark round 26/30  benchmark round 27/30  benchmark round 28/30  benchmark round 29/30  benchmark round 30/30
-  done in 16.7 s; all sessions valid: True
+  done in 48.6 s; all sessions valid: True
 
 === ZKP times (ms), all clients over all rounds (saved runs) ===
 zkp                           Schnorr ZKP (v10)  Pedersen ZKP (v11)  Proposed Pedersen ZKP (v12)
-Authentication time min                  6.2918             89.2637                       1.5493
-Authentication time max                  8.5608            152.0221                      20.8474
-Authentication time mean                 6.5127            101.5604                       5.6356
-Proof generation time min                2.7872             28.3190                       0.2862
-Proof generation time max                4.9613             49.6967                       8.4250
-Proof generation time mean               2.8996             32.4643                       1.0808
-Proof verification time min              3.5046             60.1475                       1.2595
-Proof verification time max              5.0427            114.4620                      12.8701
-Proof verification time mean             3.6131             69.0961                       4.5548
+Authentication time min                  4.6165            127.1953                       3.7968
+Authentication time max                 24.5207            379.6925                      17.1747
+Authentication time mean                16.5895            314.6827                       5.6404
+Proof generation time min                2.0493             37.3774                       0.4736
+Proof generation time max               11.0550            132.1389                       4.7120
+Proof generation time mean               7.3325             95.5577                       0.9746
+Proof verification time min              2.5672             82.0177                       3.1509
+Proof verification time max             13.8257            279.9545                      14.3044
+Proof verification time mean             9.2570            219.1249                       4.6658
 
 === ZKP times (ms) per client: min / max / mean ===
 Authentication time:
-                             Schnorr ZKP (v10)          Pedersen ZKP (v11) Proposed Pedersen ZKP (v12)
-client                                                                                                
-Client 1(Hungary)        6.419 / 8.561 / 6.661   89.264 / 152.022 / 98.032      1.741 / 20.847 / 6.071
-Client 2(Switzerland)    6.318 / 6.718 / 6.447  90.144 / 135.536 / 101.848       1.590 / 9.257 / 5.507
-Client 3(VA Long Beach)  6.292 / 7.860 / 6.456  92.674 / 146.669 / 102.711      1.553 / 14.928 / 5.611
-Client 4(Cleveland)      6.362 / 7.287 / 6.488  91.077 / 133.429 / 103.650      1.549 / 10.313 / 5.354
-All clients              6.292 / 8.561 / 6.513  89.264 / 152.022 / 101.560      1.549 / 20.847 / 5.636
+                               Schnorr ZKP (v10)           Pedersen ZKP (v11) Proposed Pedersen ZKP (v12)
+client                                                                                                   
+Client 1(Hungary)        5.154 / 18.844 / 15.797  224.214 / 357.244 / 323.638      4.183 / 14.215 / 5.719
+Client 2(Switzerland)    5.242 / 24.039 / 16.321  127.195 / 379.693 / 306.219      4.002 / 17.175 / 5.683
+Client 3(VA Long Beach)  4.617 / 22.269 / 16.794  175.603 / 370.008 / 316.561      3.797 / 15.147 / 5.573
+Client 4(Cleveland)      5.458 / 24.521 / 17.445  169.718 / 358.513 / 312.312      3.932 / 14.102 / 5.587
+All clients              4.617 / 24.521 / 16.589  127.195 / 379.693 / 314.683      3.797 / 17.175 / 5.640
 Proof generation time:
-                             Schnorr ZKP (v10)        Pedersen ZKP (v11) Proposed Pedersen ZKP (v12)
-client                                                                                              
-Client 1(Hungary)        2.879 / 4.961 / 3.027  28.912 / 37.560 / 31.154       0.354 / 7.977 / 1.291
-Client 2(Switzerland)    2.803 / 3.070 / 2.856  28.487 / 42.209 / 31.839       0.299 / 2.868 / 0.976
-Client 3(VA Long Beach)  2.787 / 2.895 / 2.835  28.591 / 49.697 / 33.268       0.291 / 8.425 / 1.104
-Client 4(Cleveland)      2.797 / 3.662 / 2.881  28.319 / 44.447 / 33.596       0.286 / 4.939 / 0.952
-All clients              2.787 / 4.961 / 2.900  28.319 / 49.697 / 32.464       0.286 / 8.425 / 1.081
+                              Schnorr ZKP (v10)         Pedersen ZKP (v11) Proposed Pedersen ZKP (v12)
+client                                                                                                
+Client 1(Hungary)         2.336 / 8.839 / 7.174  76.508 / 112.901 / 98.137       0.712 / 3.136 / 1.092
+Client 2(Switzerland)    2.209 / 11.055 / 7.196  42.496 / 117.787 / 90.860       0.474 / 4.712 / 1.028
+Client 3(VA Long Beach)  2.049 / 10.412 / 7.355  37.377 / 132.139 / 96.496       0.583 / 4.320 / 0.948
+Client 4(Cleveland)      2.251 / 10.753 / 7.604  43.394 / 113.820 / 96.738       0.571 / 2.195 / 0.831
+All clients              2.049 / 11.055 / 7.332  37.377 / 132.139 / 95.558       0.474 / 4.712 / 0.975
 Proof verification time:
-                             Schnorr ZKP (v10)         Pedersen ZKP (v11) Proposed Pedersen ZKP (v12)
-client                                                                                               
-Client 1(Hungary)        3.534 / 4.366 / 3.634  60.148 / 114.462 / 66.878      1.320 / 12.870 / 4.780
-Client 2(Switzerland)    3.509 / 3.891 / 3.591   61.490 / 96.056 / 70.009       1.285 / 6.934 / 4.531
-Client 3(VA Long Beach)  3.505 / 5.043 / 3.621   62.811 / 99.062 / 69.444       1.259 / 6.620 / 4.506
-Client 4(Cleveland)      3.553 / 3.775 / 3.607   62.569 / 99.323 / 70.054       1.263 / 6.550 / 4.402
-All clients              3.505 / 5.043 / 3.613  60.148 / 114.462 / 69.096      1.259 / 12.870 / 4.555
+                              Schnorr ZKP (v10)           Pedersen ZKP (v11) Proposed Pedersen ZKP (v12)
+client                                                                                                  
+Client 1(Hungary)        2.818 / 11.651 / 8.623  127.620 / 259.946 / 225.501      3.465 / 11.080 / 4.627
+Client 2(Switzerland)    2.812 / 12.984 / 9.125   82.018 / 279.955 / 215.359      3.383 / 12.463 / 4.655
+Client 3(VA Long Beach)  2.567 / 13.021 / 9.439  128.161 / 262.487 / 220.065      3.151 / 14.304 / 4.625
+Client 4(Cleveland)      3.207 / 13.826 / 9.841   98.203 / 250.660 / 215.574      3.355 / 13.258 / 4.756
+All clients              2.567 / 13.826 / 9.257   82.018 / 279.955 / 219.125      3.151 / 14.304 / 4.666
 
 === Same-machine benchmark: ZKP times (ms), all clients ===
-                                             min_ms                                                           max_ms                                                          mean_ms                                     
-zkp                     Proposed Pedersen ZKP (v12) Pedersen ZKP (v11) Schnorr ZKP (v10) Proposed Pedersen ZKP (v12) Pedersen ZKP (v11) Schnorr ZKP (v10) Proposed Pedersen ZKP (v12) Pedersen ZKP (v11) Schnorr ZKP (v10)
+                                    min_ms                                                           max_ms                                                          mean_ms                                              
+zkp                     Pedersen ZKP (v11) Proposed Pedersen ZKP (v12) Schnorr ZKP (v10) Pedersen ZKP (v11) Proposed Pedersen ZKP (v12) Schnorr ZKP (v10) Pedersen ZKP (v11) Proposed Pedersen ZKP (v12) Schnorr ZKP (v10)
 time                                                                                                                                                                                                                      
-Authentication time                          1.3925            94.2648            4.5898                      5.4959           237.4733           14.0388                      1.9024           119.2266            6.3567
-Proof generation time                        0.2161            29.4782            2.0343                      1.5775            78.5899            6.1088                      0.3162            37.8656            2.8101
-Proof verification time                      1.1751            64.1866            2.5537                      4.4894           164.0056            8.0704                      1.5861            81.3611            3.5466
+Authentication time               244.5222                      3.3984           12.4641           652.9538                     18.1309           45.1798           360.2830                      5.7030           19.9778
+Proof generation time              78.7500                      0.4454            5.4605           258.0857                      5.1246           21.0704           110.3155                      0.8371            8.7411
+Proof verification time           165.7722                      2.9103            6.9091           394.8681                     17.3490           33.7055           249.9675                      4.8659           11.2368
 
 === Communication (RTT 50 ms, up 20 Mbit/s, down 50 Mbit/s) ===
 version                                   v10          v11        v12
@@ -73,28 +73,28 @@ zkp_share_of_bytes_%                   0.1071      10.4560     0.1271
 comm_s_total_run (all clients)        27.5055      30.1628    33.5092
 
 === Computation ===
-version                                 v10      v11      v12
-rounds                              30.0000  30.0000  30.0000
-zkp_per_round_ms_min                25.4047 367.4815   6.4337
-zkp_per_round_ms_max                27.8064 545.1317  54.3379
-zkp_per_round_ms_mean               26.0510 406.2416  22.5424
-zkp_generation_per_round_ms_min     11.2751 115.5897   1.2317
-zkp_generation_per_round_ms_max     13.4534 166.5339  24.2099
-zkp_generation_per_round_ms_mean    11.5985 129.8573   4.3233
-zkp_verification_per_round_ms_min   14.1296 251.8918   5.1280
-zkp_verification_per_round_ms_max   15.8037 381.9185  30.1280
-zkp_verification_per_round_ms_mean  14.4525 276.3843  18.2191
-client_per_round_s_min               1.0458   0.8224   1.0649
-client_per_round_s_max               1.1057   1.5257   3.7651
-client_per_round_s_mean              1.0732   0.9478   2.8141
-server_per_round_s_min               0.4148   0.5698   0.4261
-server_per_round_s_max               0.4480   0.9481   1.5570
-server_per_round_s_mean              0.4278   0.6346   1.0505
-total_per_round_s_min                4.6123   3.8727   4.6857
-total_per_round_s_max                4.8533   7.0511  16.5575
-total_per_round_s_mean               4.7207   4.4258  12.3070
-zkp_share_of_computation_%           0.5518   9.1790   0.1832
-total_computation_s_run            141.6222 132.7736 369.2088
+version                                 v10       v11      v12
+rounds                              30.0000   30.0000  30.0000
+zkp_per_round_ms_min                21.4297  893.2690  16.3864
+zkp_per_round_ms_max                82.2975 1424.5810  60.6387
+zkp_per_round_ms_mean               66.3579 1258.7306  22.5618
+zkp_generation_per_round_ms_min      9.2320  278.8927   2.5281
+zkp_generation_per_round_ms_max     37.4845  430.6762  10.0481
+zkp_generation_per_round_ms_mean    29.3298  382.2310   3.8984
+zkp_verification_per_round_ms_min   12.0057  614.3763  13.8583
+zkp_verification_per_round_ms_max   46.9261 1023.7390  51.1045
+zkp_verification_per_round_ms_mean  37.0280  876.4997  18.6633
+client_per_round_s_min               0.9837    2.2924   2.4090
+client_per_round_s_max               2.8102    2.7253   6.0593
+client_per_round_s_mean              2.2739    2.4646   2.9104
+server_per_round_s_min               0.4409    1.3944   0.9076
+server_per_round_s_max               1.0678    2.0026   2.4132
+server_per_round_s_mean              0.8814    1.7353   1.0523
+total_per_round_s_min                4.3867   10.5734  10.5809
+total_per_round_s_max               12.2429   12.8320  25.3057
+total_per_round_s_mean               9.9769   11.5936  12.6937
+zkp_share_of_computation_%           0.6651   10.8571   0.1777
+total_computation_s_run            299.3083  347.8092 380.8121
 
 Figures (600-dpi PNG + vector PDF):
   saved C:\Users\SURYA\Documents\Bakchudi_Fed\ZKP_Comparison\outputs\figures\fig1_zkp_times_comparison.png (+ .pdf)

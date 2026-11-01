@@ -1,29 +1,29 @@
 \begin{table*}[t]
 \centering
-\caption{ZKP comparison of the three FedRF-Diff versions (seed 42, 30 rounds, 4 clients, $\varepsilon_t \sim U[2,3]$). Times in ms per client and round.}
+\caption{ZKP comparison of the three FedRF-Diff versions (seed 42, 30 rounds, 4 clients, $\varepsilon_r \sim U[2,3]$). Times in ms per client and round.}
 \label{tab:zkp_comparison}
 \begin{tabular}{lrrr}
 \toprule
 Quantity & Schnorr ZKP (v10) & Pedersen ZKP (v11) & Proposed Pedersen ZKP (v12) \\
 \midrule
-Auth min (ms) & 6.29 & 89.26 & 1.31 \\
-Auth max (ms) & 8.56 & 152.02 & 2.94 \\
-Auth mean (ms) & 6.51 & 101.56 & 1.74 \\
-Gen min (ms) & 2.79 & 28.32 & 0.24 \\
-Gen max (ms) & 4.96 & 49.70 & 0.74 \\
-Gen mean (ms) & 2.90 & 32.46 & 0.31 \\
-Verif min (ms) & 3.50 & 60.15 & 1.03 \\
-Verif max (ms) & 5.04 & 114.46 & 2.68 \\
-Verif mean (ms) & 3.61 & 69.10 & 1.43 \\
-Bench auth mean (ms) & 111.47 & 2,323 & 30.43 \\
+Auth min (ms) & 4.62 & 127.20 & 3.80 \\
+Auth max (ms) & 24.52 & 379.69 & 17.17 \\
+Auth mean (ms) & 16.59 & 314.68 & 5.64 \\
+Gen min (ms) & 2.05 & 37.38 & 0.47 \\
+Gen max (ms) & 11.05 & 132.14 & 4.71 \\
+Gen mean (ms) & 7.33 & 95.56 & 0.97 \\
+Verif min (ms) & 2.57 & 82.02 & 3.15 \\
+Verif max (ms) & 13.83 & 279.95 & 14.30 \\
+Verif mean (ms) & 9.26 & 219.12 & 4.67 \\
+Bench auth mean (ms) & 19.98 & 360.28 & 5.70 \\
 ZKP up (B/session) & 512.00 & 55,872 & 576.00 \\
 ZKP down (B/session) & 1.00 & 1.00 & 33.00 \\
 ZKP comm (ms/session) & 50.20 & 72.35 & 100.24 \\
 Comm per client-round (s) & 0.23 & 0.25 & 0.28 \\
 ZKP share of comm (\%) & 21.90 & 28.78 & 35.90 \\
-ZKP comp per round (ms) & 26.05 & 406.24 & 6.94 \\
-Total comp per round (s) & 4.72 & 4.43 & 4.00 \\
-ZKP share of comp (\%) & 0.55 & 9.18 & 0.17 \\
+ZKP comp per round (ms) & 66.36 & 1,259 & 22.56 \\
+Total comp per round (s) & 9.98 & 11.59 & 12.69 \\
+ZKP share of comp (\%) & 0.67 & 10.86 & 0.18 \\
 \bottomrule
 \end{tabular}
 \end{table*}

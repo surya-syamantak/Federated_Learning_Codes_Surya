@@ -1,6 +1,6 @@
 """Federated server: authentication, structural validation, tree-level aggregation, stopping.
 
-Step 3 · every client uploads its complete forest F_k^(t-1) as explicit node structures, so
+Step 3 · every client uploads its complete forest F_k^(r-1) as explicit node structures, so
 there is nothing to decode: the server parses the JSON transport format and checks every tree
 (schema id and version, class order, sender and round, payload size, unique dense node ids,
 valid feature indices and finite thresholds, child references that form one rooted tree, leaf
@@ -9,15 +9,15 @@ and the creator it was born with; a copy of a known tree must be identical to th
 only the creator may introduce a new tree id. A malformed tree is rejected on its own, a
 malformed upload as a whole.
 
-Bounded-update enforcement · before a forest enters U^(t) the server also checks it against
+Bounded-update enforcement · before a forest enters U^(r) the server also checks it against
 public bounds derived from the protocol parameters: at most max(initial_trees, local_budget)
 trees per upload (CapOrPrune keeps F_k within B_k), and at most
 max(initial_trees, supplementary_trees) x (t - t_last) tree ids the server has never seen,
 where t_last is the client's last accepted round (one H_k is grown per round). An upload
 outside either bound is rejected as a whole and none of its new tree ids are registered.
 
-The valid trees form the candidate pool U^(t) = union of T_k^(t-1), and the aggregation policy
-A selects at most B of them: G^(t) = SelectTrees(U^(t), A, B). Tree parameters are never
+The valid trees form the candidate pool U^(r) = union of T_k^(r-1), and the aggregation policy
+A selects at most B of them: G^(r) = SelectTrees(U^(r), A, B). Tree parameters are never
 averaged. Step 7 · the server never sees validation metrics: it only tallies the clients'
 boolean convergence flags.
 """
@@ -232,7 +232,7 @@ class FederatedServer:
         self.policy, self.budget = policy, budget
         self.public_keys = {}
         self.known = {}  # tree_id -> digest of the first accepted copy
-        self.global_forest = []  # G^(t)
+        self.global_forest = []  # G^(r)
         self.tree_size = {}  # tree_id -> bytes of its TreeMessage
         self.last_accepted = {}  # client_id -> last round whose upload was within bound
         self.last_bound = None  # bounded-update check of the latest receive()
@@ -250,7 +250,7 @@ class FederatedServer:
                           self.zkp_lambda)
 
     def receive(self, client_id, payload, rnd, creators):
-        """Step 3 · structural validation and bounded-update enforcement of one uploaded forest F_k^(t-1)."""
+        """Step 3 · structural validation and bounded-update enforcement of one uploaded forest F_k^(r-1)."""
         self.last_bound = None
         try:
             checked, rejected = check_update(payload, self.schema, self.limits, client_id, rnd, creators)
@@ -299,7 +299,7 @@ class FederatedServer:
         return self.last_bound
 
     def aggregate(self, valid_forests):
-        """Step 3 · G^(t) = SelectTrees(U^(t), A, B) with U^(t) the union of the valid client trees."""
+        """Step 3 · G^(r) = SelectTrees(U^(r), A, B) with U^(r) the union of the valid client trees."""
         pool, votes = {}, {}
         for trees in valid_forests:
             for t in trees:
@@ -313,12 +313,12 @@ class FederatedServer:
 
     @property
     def global_bytes(self):
-        """Step 4 · size of the broadcast G^(t)."""
+        """Step 4 · size of the broadcast G^(r)."""
         return sum(self.tree_size[t.tree_id] for t in self.global_forest)
 
     @staticmethod
     def stopping_decision(flags, rnd, max_rounds):
-        """Step 7 · the server sees only the boolean flags b_k^(t)."""
+        """Step 7 · the server sees only the boolean flags b_k^(r)."""
         if all(flags):
             return "all-client convergence"
         if rnd >= max_rounds:

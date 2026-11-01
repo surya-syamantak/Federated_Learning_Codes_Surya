@@ -9,7 +9,7 @@ No training is repeated: the figures are drawn from the CSV files the run
 wrote (history.csv, zkp_times.csv, smpc_times.csv, costs.csv, config.json). Each figure is
 saved as a 600-dpi PNG and a vector PDF in <run-dir>/figures/:
 
-    convergence.png            Delta Z, |Delta L| and L_avg per round
+    convergence.png            Delta Z, |Delta L| and L_glob per round
     zkp_times.png              ZKP authentication, proof generation and
                                proof verification time per client per round
     smpc_times.png             SMPC masking time (clients), one-time key setup

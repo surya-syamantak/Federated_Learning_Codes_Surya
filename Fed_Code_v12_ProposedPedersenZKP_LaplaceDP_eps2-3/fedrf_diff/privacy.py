@@ -1,6 +1,6 @@
 """Stage 1: Laplace differential privacy for the transmitted latent vectors.
 
-Every round each client privatises every latent vector z_i (row of Z_c) it
+Every round each client privatises every latent vector z_i (row of Ψ_k) it
 sends to the server with the Laplace mechanism:
 
     1. clip:   z_i <- z_i * min(1, C / ||z_i||_1)          (L1 norm <= C)
@@ -16,10 +16,10 @@ client); it does not cover the training labels, which the server needs to
 train the global model, nor the influence one patient has on other patients'
 vectors through the shared kernel.
 
-Per-round budget: EPSILON = "random" (the default) draws a new epsilon_t
+Per-round budget: EPSILON = "random" (the default) draws a new epsilon_r
 uniformly from RANDOM_RANGE = [2, 3] every round of the main (ZKP) run
-(reproducible from the run seed; all clients use the same epsilon_t that round;
-spent = epsilon_1 + ... + epsilon_t). A number instead, e.g. EPSILON = 5, makes
+(reproducible from the run seed; all clients use the same epsilon_r that round;
+spent = epsilon_1 + ... + epsilon_r). A number instead, e.g. EPSILON = 5, makes
 each round (5, 0)-DP, so after t rounds each vector has spent 5t. Every budget
 used (EPSILON, RANDOM_RANGE and the EPSILON_SWEEP budgets) must lie in
 EPSILON_RANGE = [1, 5]; check_epsilon() enforces it.
@@ -36,8 +36,8 @@ import numpy as np
 # --- Laplace DP settings ---------------------------------------------------
 EPSILON_RANGE = (1.0, 5.0)  # allowed per-round budgets
 RANDOM = "random"
-RANDOM_RANGE = (2.0, 3.0)  # epsilon_t ~ U(RANDOM_RANGE) each round when EPSILON = RANDOM
-EPSILON = RANDOM  # per-round budget of every transmitted vector (a number, or RANDOM: new epsilon_t each round)
+RANDOM_RANGE = (2.0, 3.0)  # epsilon_r ~ U(RANDOM_RANGE) each round when EPSILON = RANDOM
+EPSILON = RANDOM  # per-round budget of every transmitted vector (a number, or RANDOM: new epsilon_r each round)
 CLIP_NORM = 1.0  # C: L1 bound on each latent vector (sensitivity = 2C)
 # Validation embeddings never leave the client, so they stay clean.
 NOISE_ON_VALIDATION = False
@@ -95,7 +95,7 @@ class LaplaceMechanism:
     """Per-client Laplace mechanism with a running privacy account.
 
     ``epsilon=None`` switches DP off (no clipping, no noise, nothing spent);
-    ``epsilon="random"`` expects set_epsilon() with each round's epsilon_t.
+    ``epsilon="random"`` expects set_epsilon() with each round's epsilon_r.
     ``sigma`` is the noise standard deviation per coordinate (sqrt(2) b),
     which the convergence monitor uses to discount the noise.
     """

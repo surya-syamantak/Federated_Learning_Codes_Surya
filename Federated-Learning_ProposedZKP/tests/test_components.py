@@ -64,10 +64,10 @@ def test_group_parameters_are_rederivable(pp):
 def test_honest_client_follows_the_diagram_over_rounds(pp, lam):
     p, q, g, h = int(pp.p), int(pp.q), int(pp.g), int(pp.h)
     client, server = zkp.ClientProver(pp, "client_1", lam), zkp.ServerVerifier(pp, lam)
-    assert client.C_prev == 1  # round 1: C_{t-1} initialised to 1
+    assert client.C_prev == 1  # round 1: C_{r-1} initialised to 1
     for t in (1, 2, 3):
         C_prev = int(client.C_prev)
-        C_t = int(client.commit(t))  # 1. C_t = g^{v_t} h^{r_t} (C_{t-1})^lambda
+        C_t = int(client.commit(t))  # 1. C_r = g^{v_r} h^{ρ_r} (C_{r-1})^beta
         v_t, r_t = int(client._v), int(client._r)
         assert C_t == pow(g, v_t, p) * pow(h, r_t, p) * pow(C_prev, lam, p) % p
         T = int(client.announce())  # 2. T = g^k h^tau
@@ -75,7 +75,7 @@ def test_honest_client_follows_the_diagram_over_rounds(pp, lam):
         c = int(server.challenge())  # 3. random challenge
         r_v, r_s = (int(x) for x in client.respond(c))  # 4. responses
         assert r_v == (k + c * v_t) % q and r_s == (tau + c * r_t) % q
-        C_base = C_t * pow(pow(C_prev, lam, p), -1, p) % p  # C_t / (C_{t-1})^lambda
+        C_base = C_t * pow(pow(C_prev, lam, p), -1, p) % p  # C_r / (C_{r-1})^beta
         assert pow(g, r_v, p) * pow(h, r_s, p) % p == T * pow(C_base, c, p) % p
         assert server.verify("client_1", C_t, T, c, r_v, r_s)
         server.decide("client_1", C_t, True)  # 5. Authentication Successful
@@ -89,14 +89,14 @@ def test_replayed_forged_and_out_of_chain_sessions_fail(pp):
     old = client.last_transcript
     replayed = zkp.authenticate(pp, client, server, 2, replay=old)  # impostor replays round 1
     assert not replayed.authenticated and replayed.outcome == "Invalid"
-    assert server.C_prev["client_1"] == client.C_prev == old[0]  # both keep C_{t-1} after a failure
+    assert server.C_prev["client_1"] == client.C_prev == old[0]  # both keep C_{r-1} after a failure
     C_t, T = client.commit(2), client.announce()
     c = server.challenge()
     r_v, r_s = client.respond(c)
     assert not server.verify("client_1", C_t, T, c, (r_v + 1) % pp.q, r_s)  # forged response
     assert not server.verify("client_1", C_t, T, (c + 1) % pp.q, r_v, r_s)  # wrong challenge
     assert not server.verify("client_2", C_t, T, c, r_v, r_s)  # another client's chain
-    # A server that uses another lambda divides out the wrong power of C_{t-1} (here != 1).
+    # A server that uses another lambda divides out the wrong power of C_{r-1} (here != 1).
     other = zkp.ServerVerifier(pp, lam=3)
     other.C_prev = dict(server.C_prev)
     assert not other.verify("client_1", C_t, T, c, r_v, r_s)

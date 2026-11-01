@@ -10,7 +10,7 @@ from .client import LatentMessage
 
 
 class GlobalForest:
-    """The broadcast M_G: a random forest with Laplace-smoothed probabilities.
+    """The broadcast M_glob: a random forest with Laplace-smoothed probabilities.
 
     A raw forest returns probability 0 or 1 when every tree agrees, and one
     confidently wrong validation patient then adds ~34 / n_val to the log-loss
@@ -38,30 +38,30 @@ class Server:
         self.P_ref: np.ndarray | None = None
 
     def set_reference(self, P_ref: np.ndarray) -> None:
-        """Freeze the landmark reference matrix P_ref (m x d_z)."""
+        """Freeze the landmark reference matrix P_ref (m x d)."""
         self.P_ref = P_ref.copy()
 
     def align(self, msg: LatentMessage) -> np.ndarray:
-        """A_c^*(t) = argmin ||P_c A - P_ref||_F with A^T A = I."""
+        """R_k^*(r) = argmin ||P_k A - P_ref||_F with A^T A = I."""
         return orthogonal_procrustes(msg.P, self.P_ref)
 
     @staticmethod
     def aggregate(messages: dict[str, LatentMessage], A: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
-        """Z_G^(t): aligned rows Z~_c A_c of every accepted client, kept per client.
+        """Z_glob^(r): aligned rows Z_k R_k of every accepted client, kept per client.
 
         Clients hold different patients, so their rows are stacked rather than
-        summed; stacking weights each client by n_c, i.e. w_c = n_c / sum n_r.
+        summed; stacking weights each client by N_k, i.e. w_k = N_k / sum N_j.
         """
         return {name: msg.Z_tilde @ A[name] for name, msg in messages.items()}
 
     def train_global_model(
         self, Z_G: dict[str, np.ndarray], messages: dict[str, LatentMessage]
     ) -> tuple[GlobalForest, dict[str, np.ndarray]]:
-        """M_G^(t) = f_G(Z_G^(t)): random forest on the aligned latents.
+        """M_glob^(r) = f_G(Z_glob^(r)): random forest on the aligned latents.
 
         Also returns each client's pseudo-labels y^ for its training rows,
         taken out-of-bag (only from trees that did not train on that row).
-        The rows are part of Z_G, so in-sample predictions would mostly hand
+        The rows are part of Z_glob, so in-sample predictions would mostly hand
         back y itself and the decoded data would carry no global knowledge.
         """
         names = list(Z_G)

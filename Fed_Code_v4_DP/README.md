@@ -55,7 +55,7 @@ and the stopping thresholds. Then, for every round:
 * **validation metrics** of that round's global model for each client and
   for the Global Server: *Accuracy, Precision, Recall, Specificity, F1 Score,
   Matthews Correlation Coefficient (MCC), Cohen's Kappa*;
-* the server line: ΔZ (and its threshold), `L_avg`, ΔL, patience, round
+* the server line: ΔZ (and its threshold), `L_glob`, ΔL, patience, round
   time and the DP budget spent so far.
 
 After convergence:
@@ -65,7 +65,7 @@ After convergence:
   per client, and how many authentications succeeded;
 * the accuracy-vs-DP-budget tables (mean over the rounds and final round).
 
-"Global Server" is the global model `M_G` scored on all clients' validation
+"Global Server" is the global model `M_glob` scored on all clients' validation
 patients together (summed TP/FP/TN/FN). Clients only report their loss and
 TP/FP/TN/FN counts; every metric is computed from those counts.
 
@@ -74,9 +74,9 @@ TP/FP/TN/FN counts; every metric is computed from those counts.
 | File | Content |
 |---|---|
 | `config.json` | the settings used, including `privacy` and `zkp` |
-| `history.csv` | per round: ΔZ, `L_avg`, ΔL, timings, DP budget spent, and per client (and pooled, `[all]`) loss and the seven metrics |
+| `history.csv` | per round: ΔZ, `L_glob`, ΔL, timings, DP budget spent, and per client (and pooled, `[all]`) loss and the seven metrics |
 | `final_metrics.csv` | last round's metrics per client, pooled row and macro average |
-| `global_server_metrics.csv` | per round: the Global Server's TP/FP/TN/FN, log-loss, seven metrics, `L_avg`, ΔZ, ΔL, ε spent |
+| `global_server_metrics.csv` | per round: the Global Server's TP/FP/TN/FN, log-loss, seven metrics, `L_glob`, ΔZ, ΔL, ε spent |
 | `zkp_times.csv` | per round and client: authenticated, vectors, the three ZKP times, ZKP bytes up/down |
 | `costs.csv` | per round and client (and Global Server): computation time and its parts, bytes sent and received, ε spent |
 | `dp_budget_sweep.csv` | per per-round ε (and no DP): σ, ε spent, mean accuracy over the rounds and final-round accuracy per client and pooled |
@@ -86,7 +86,7 @@ colour-blind-safe palette with a distinct marker per client):
 
 | Figure | Panels |
 |---|---|
-| `convergence.png` | (a) ΔZ with its threshold, (b) \|ΔL\| with ε_L, (c) `L_avg`; converged round marked |
+| `convergence.png` | (a) ΔZ with its threshold, (b) \|ΔL\| with ϵ_l, (c) `L_glob`; converged round marked |
 | `zkp_times.png` | (a) authentication, (b) proof generation, (c) proof verification time per client per round |
 | `accuracy_vs_dp_budget.png` | (a) accuracy (mean over the rounds) vs per-round ε, incl. no DP; (b) accuracy per round vs cumulative ε spent in the main run |
 | `computation_cost.png` | (a) computation time per round per client and server, (b) mean per-client breakdown |
@@ -126,26 +126,26 @@ EPSILON_SWEEP = (1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0, None)
 
 Scope of the guarantee: it is per transmitted vector (local DP on what
 leaves the client). It does not cover the training labels, which the server
-needs to train `M_G`, nor the influence one patient has on other patients'
+needs to train `M_glob`, nor the influence one patient has on other patients'
 vectors through the shared kernel.
 
 **Stopping under DP.** σ is public, so the server subtracts the noise's
-expected energy from ΔZ, and the ΔZ threshold is `ε_Z + σ/C`
-(0.15 + 0.637 = 0.787 at ε = 20; 0.15 without DP). ε_L = 0.02, patience 3.
+expected energy from ΔZ, and the ΔZ threshold is `ϵ_z + σ/C`
+(0.15 + 0.637 = 0.787 at ε = 20; 0.15 without DP). ϵ_l = 0.02, patience 3.
 
 ## ZKP authentication
 
 `fedrf_diff/zkp.py` implements the "Proposed ZKP-Based Authentication for
-Vector Representation" protocol for every latent vector `z_c` of every
+Vector Representation" protocol for every latent vector `z_k` of every
 client, every round, before the server accepts the matrix:
 
-1. **Commitment (client):** `C_c = Π g_j^{z_cj} · h^{r_c} · (C_{c−1})^λ`,
+1. **Commitment (client):** `C_k = Π g_j^{z_cj} · h^{r_k} · (C_{e−1})^β`,
    chained to the previous commitment.
-2. **Proof (client):** random `k_j, τ`; `T = Π g_j^{k_j} · h^τ`.
-3. **Challenge (server):** random `c`.
-4. **Response (client):** `s_j = k_j + c·z_cj (mod q)`, `s_r = τ + c·r_c (mod q)`.
-5. **Verification (server):** `C_base = C_c / (C_{c−1})^λ`; check
-   `Π g_j^{s_j} · h^{s_r} = T · (C_base)^c`.
+2. **Proof (client):** random `k_j, η`; `T = Π g_j^{k_j} · h^η`.
+3. **Challenge (server):** random `e`.
+4. **Response (client):** `s_j = k_j + e·z_cj (mod q)`, `s_r = η + e·r_k (mod q)`.
+5. **Verification (server):** `C_base = C_k / (C_{e−1})^β`; check
+   `Π g_j^{s_j} · h^{s_r} = T · (C_base)^e`.
 6. **Authentication Successful** if every vector verifies, otherwise
    **Authentication Failed** and the client sits out the round.
 
@@ -156,7 +156,7 @@ ENABLED = True
 GROUP = "modp2048"     # RFC 3526 2048-bit group; "test512" is fast but NOT secure
 LAMBDA = 3             # chaining exponent
 SCALE_BITS = 32        # fixed-point encoding round(z * 2^32)
-BIND_PLAINTEXT = False # extra proof that the commitment opens to the sent Z~_c
+BIND_PLAINTEXT = False # extra proof that the commitment opens to the sent Z_k
 ```
 
 Times: *proof generation* = the client's steps 1, 2 and 4; *proof
@@ -168,12 +168,12 @@ mod `q = (p−1)/2` (the picture's "mod q").
 
 * **Computation** (s per round): per client, RF kernel + diffusion map + DP,
   ZKP proof generation, validation, decoding + RF retraining; for the server,
-  alignment + aggregation + `M_G` training + stopping rule, plus ZKP proof
+  alignment + aggregation + `M_glob` training + stopping rule, plus ZKP proof
   verification.
 * **Communication** (bytes per round): uplink = latent matrix (float64),
   training labels (1 byte each), loss + TP/FP/TN/FN (24 bytes) and the ZKP
   messages (commitment, T, responses); downlink = challenges, the pickled
-  `M_G`, `A_c` and the out-of-bag labels.
+  `M_glob`, `R_k` and the out-of-bag labels.
 
 ## Bounded-update enforcement
 
@@ -182,15 +182,15 @@ client update against a public bound (`fedrf_diff/bounds.py`). An update outside
 rejected for that round and never aggregated, just like an update that fails authentication.
 The check needs no secrets: it uses only the update and the public protocol parameters.
 
-Always checked: the shapes (`d_z` columns, the agreed number of landmark rows, one label per
+Always checked: the shapes (`d` columns, the agreed number of landmark rows, one label per
 patient row), all values finite, labels in {0, 1}.
 
-With adaptive Gaussian DP (L2 clip C_t, sigma_t = noise_ratio * C_t), the server first checks the
-declared release parameters: sigma_t must equal noise_ratio * C_t, and C_t <= sqrt(n d_z).
+With adaptive Gaussian DP (L2 clip C_r, sigma_r = noise_ratio * C_r), the server first checks the
+declared release parameters: sigma_r must equal noise_ratio * C_r, and C_r <= sqrt(N_tot d).
 Then:
-- every landmark row satisfies ||p||_2 <= C_t;
-- the mean squared norm of the patient rows must stay below C_t^2 + d_z sigma_t^2 plus 8
-  standard deviations of that mean (per-row variance 2 d_z sigma^4 + 4 C^2 sigma^2).
+- every landmark row satisfies ||p||_2 <= C_r;
+- the mean squared norm of the patient rows must stay below C_r^2 + d sigma_r^2 plus 8
+  standard deviations of that mean (per-row variance 2 d sigma^4 + 4 C^2 sigma^2).
 
 Outputs:
 - each round prints a "Bounded-update enforcement (per client)" table with the outcome, the
@@ -207,11 +207,11 @@ To switch the check off for comparison, set `bounds.ENABLED = False` or call
 
 | Stage | Where | What |
 |---|---|---|
-| 1 | client | RF kernel of `RF_c^(t-1)` over its training rows + landmarks; diffusion map `Z_c = √n V Λ^τ` (constant eigenvector dropped); Gaussian DP |
+| 1 | client | RF kernel of `RF_k^(r-1)` over its training rows + landmarks; diffusion map `Ψ_k = √N_tot U diag(μ)^γ` (constant eigenvector dropped); Gaussian DP |
 | 1.5 | both | ZKP authentication of every vector; failed clients sit out the round |
-| 2 | server | Procrustes `A_c` from landmark rows `P_c` to `P_ref`; `Z_G` = aligned rows of all clients; `M_G` = random forest on `Z_G` + out-of-bag labels `ŷ`; ΔZ |
-| 3 | client | validation loss `L_c`; k-NN decode of `Z̃_c A_c`; retrain `RF_c` on `D_train ∪ {(x̂, ŷ)}` |
-| 4 | server | `L_avg = Σ (n_c/Σn) L_c`, ΔL; stop after 3 consecutive rounds with ΔZ < threshold and ΔL < ε_L |
+| 2 | server | Procrustes `R_k` from landmark rows `P_k` to `P_ref`; `Z_glob` = aligned rows of all clients; `M_glob` = random forest on `Z_glob` + out-of-bag labels `ŷ`; ΔZ |
+| 3 | client | validation loss `L_k`; k-NN decode of `Z_k R_k`; retrain `RF_k` on `D_train ∪ {(x̂, ŷ)}` |
+| 4 | server | `L_glob = Σ (N_k/Σn) L_k`, ΔL; stop after 3 consecutive rounds with ΔZ < threshold and ΔL < ϵ_l |
 
 ## Results (seed 42, ε = 20 per round, 2048-bit ZKP)
 

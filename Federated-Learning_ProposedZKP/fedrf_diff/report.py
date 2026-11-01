@@ -28,21 +28,21 @@ def stats_table(df, column, unit, parties):
 
 def header(cfg, clients, schema, dp_text, zkp_group):
     print(f"FedRF-Diff | seed {cfg['seed']} | up to {cfg['max_rounds']} rounds | Proposed Pedersen ZKP "
-          f"authentication: {zkp_group} group, lambda = {cfg['zkp_lambda']}")
+          f"authentication: {zkp_group} group, beta = {cfg['zkp_lambda']}")
     print("Clients (train/validation patients): "
           + ", ".join(f"{c.name} {len(c.y_train)}/{len(c.y_val)}" for c in clients)
           + f"; schema {schema.version} ({schema.n_features} features, id {schema.schema_id})")
     print(f"Tree-level aggregation: F_k^(0) = {cfg['initial_trees']} trees; every round each client uploads its "
-          f"complete forest F_k^(t-1) as explicit trees (no feature/latent encoding), the server validates them and "
-          f"selects G^(t) = SelectTrees(U^(t), {cfg['aggregation_policy']}, B = {cfg['global_budget']}) without "
-          f"averaging, and each client builds F_k^(t) = CapOrPrune(G^(t) + H_k^(t), B_k = {cfg['local_budget']}) "
+          f"complete forest F_k^(r-1) as explicit trees (no feature/latent encoding), the server validates them and "
+          f"selects G^(r) = SelectTrees(U^(r), {cfg['aggregation_policy']}, B = {cfg['global_budget']}) without "
+          f"averaging, and each client builds F_k^(r) = CapOrPrune(G^(r) + H_k^(r), B_k = {cfg['local_budget']}) "
           f"with {cfg['supplementary_trees']} supplementary trees. Vectors = leaf class-distribution vectors in an upload.")
     tuning = cfg["local_tuning"]
     if tuning:
         n_settings = 1
         for values in tuning["grid"].values():
             n_settings *= len(values)
-        print(f"Local model selection: before growing F_k^(0) and every H_k^(t) each client runs a {tuning['folds']}-fold "
+        print(f"Local model selection: before growing F_k^(0) and every H_k^(r) each client runs a {tuning['folds']}-fold "
               f"stratified grid search ({n_settings} settings of {', '.join(tuning['grid'])}; {tuning['cv_trees']} trees "
               f"per CV forest; balanced accuracy) on its training patients; CV forests are never shared.")
     print(f"{dp_text}")
@@ -50,7 +50,7 @@ def header(cfg, clients, schema, dp_text, zkp_group):
           f"{cfg['tau_loss']:g}, prediction change <= {cfg['tau_pred']:g} and G/F disagreement <= "
           f"{cfg['tau_agree']:g}; q_k counts consecutive passes and only b_k = [q_k >= {cfg['patience']}] is sent; "
           f"the server stops when all b_k are True or at t = {cfg['max_rounds']}")
-    print(f"{SERVER} = the global model G^(t) scored on all clients' validation patients together (evaluation "
+    print(f"{SERVER} = the global model G^(r) scored on all clients' validation patients together (evaluation "
           f"harness only; the server receives no metrics).")
 
 
@@ -88,9 +88,9 @@ def round_report(rnd, zkp_rows, transfer_rows, round_metrics, local_rows, server
 def run_summary(res, names):
     parties = names + [SERVER]
     n = res.rounds_run
-    print(f"\n=== Global model G^(t): metrics averaged over all {n} rounds ===")
+    print(f"\n=== Global model G^(r): metrics averaged over all {n} rounds ===")
     show(res.metrics.groupby("Client", sort=False)[METRICS].mean().reindex(parties).reset_index())
-    print(f"\n=== Local models F_k^(t): metrics averaged over all {n} rounds ===")
+    print(f"\n=== Local models F_k^(r): metrics averaged over all {n} rounds ===")
     show(res.local.groupby("Client", sort=False)[METRICS].mean().reindex(names).reset_index())
     print(f"\n=== Final models after round {n} ===")
     last_g = res.metrics[res.metrics.Round == n].set_index("Client").reindex(parties)
@@ -163,7 +163,7 @@ def run_summary(res, names):
 
 
 def dp_sweep_report(avg, last, rounds):
-    print(f"Accuracy of G^(t) averaged over the {rounds} rounds:")
+    print(f"Accuracy of G^(r) averaged over the {rounds} rounds:")
     show(avg)
     print(f"Accuracy of G^({rounds}) after round {rounds}:")
     show(last)

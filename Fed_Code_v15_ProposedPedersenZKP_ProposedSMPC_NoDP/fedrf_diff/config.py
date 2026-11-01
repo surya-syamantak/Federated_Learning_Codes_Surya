@@ -29,7 +29,7 @@ class Config:
     group_aware_val_split: bool = True
     val_fraction: float = 0.2
     # Public landmark cohort (unique patients, removed from all clients) that
-    # every client embeds; its rows give P_c and P_ref for Procrustes.
+    # every client embeds; its rows give P_k and P_ref for Procrustes.
     # Fewer than ~50 makes the alignment flip between rounds (Delta Z jumps).
     n_landmarks: int = 100
     # Client whose round-1 landmark embedding becomes the frozen P_ref.
@@ -39,12 +39,12 @@ class Config:
     n_trees: int = 500  # B
     min_samples_leaf: int = 20
     max_features: str = "sqrt"
-    d_z: int = 4  # latent dimension, d_z << d_x = 11
-    tau: float = 1.0  # diffusion time
+    d_z: int = 4  # latent dimension, d << d_x = 11
+    tau: float = 1.0  # diffusion time gamma
 
-    # --- global model M_G (random forest on the aligned latents, server side)
+    # --- global model M_glob (random forest on the aligned latents, server side)
     global_n_trees: int = 300
-    # Large leaves keep M_G smooth; with 5 the closed loop flip-flops (Delta Z ~0.25).
+    # Large leaves keep M_glob smooth; with 5 the closed loop flip-flops (Delta Z ~0.25).
     global_min_samples_leaf: int = 50
 
     # --- privacy --------------------------------------------------------

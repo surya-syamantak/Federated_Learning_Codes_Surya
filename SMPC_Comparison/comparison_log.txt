@@ -6,12 +6,12 @@ Same learning settings and ZKP; the runs differ only in the SMPC.
 === SMPC times in the runs (ms): min / max / mean per round ===
                          v14 min  v14 max  v14 mean  v15 min  v15 max  v15 mean
 entity                                                                         
-Client 1(Hungary)         0.0302   0.1174    0.0458   0.1144   0.2004    0.1340
-Client 2(Switzerland)     0.0161   0.0571    0.0239   0.1029   0.2016    0.1248
-Client 3(VA Long Beach)   0.0146   0.0473    0.0213   0.0983   0.5828    0.1705
-Client 4(Cleveland)       0.0139   0.0426    0.0204   0.0977   0.4633    0.1548
-Global Server             0.0056   0.0213    0.0100   0.0084   0.0204    0.0136
-v15 one-time key setup (ms): Hungary 1.268, Switzerland 1.189, VA Long Beach 1.185, Cleveland 1.185  (v14: none)
+Client 1(Hungary)         0.0554   0.5445    0.1469   0.2115   0.4958    0.3115
+Client 2(Switzerland)     0.0294   0.0945    0.0553   0.1603   0.4238    0.2591
+Client 3(VA Long Beach)   0.0308   0.0662    0.0503   0.1719   0.4670    0.2563
+Client 4(Cleveland)       0.0317   0.0624    0.0470   0.1489   0.4066    0.2404
+Global Server             0.0087   0.0197    0.0153   0.0107   0.0609    0.0236
+v15 one-time key setup (ms): Hungary 2.820, Switzerland 3.429, VA Long Beach 3.401, Cleveland 3.581  (v14: none)
 
 === SMPC communication per client and round (RTT 50 ms, up 20 Mbit/s, down 50 Mbit/s) ===
 scheme                                     v14       v15
@@ -29,17 +29,17 @@ server_bytes_received_per_round       384.0000  192.0000
 smpc_bytes_total_run                18816.0000 5440.0000
 
 === Computation ===
-scheme                                      v14    v15
-rounds                                   7.0000 7.0000
-total_computation_per_round_s            5.6397 7.1436
-smpc_per_round_ms (all clients + server) 0.1215 1.2873
-smpc_share_of_computation_%              0.0022 0.0180
+scheme                                       v14     v15
+rounds                                    7.0000  7.0000
+total_computation_per_round_s            10.7453 10.8891
+smpc_per_round_ms (all clients + server)  0.3148  2.9811
+smpc_share_of_computation_%               0.0029  0.0274
 
 === Design properties ===
                                     Property                   Additive secret sharing (v14)                               Proposed adaptive-prime pairwise masking (v15)
                                    Primitive              n-out-of-n additive secret sharing                               self-randomized pairwise masking (PRG streams)
-                                     Modulus                           fixed prime 2^127 - 1                     adaptive prime p_t = Pool[H(seed||t) mod 3], 61-bit pool
-                                    Encoding        fixed point 2^32 (reals), integers as is                                                      quantization S_q = 10^6
+                                     Modulus                           fixed prime 2^127 - 1                     adaptive prime p_r = Pool[H(seed||r) mod 3], 61-bit pool
+                                    Encoding        fixed point 2^32 (reals), integers as is                                                  quantization S_quant = 10^6
                               One-time setup                                            none                            pairwise Diffie-Hellman keys (2048-bit ZKP group)
          Client-to-client messages per round               N - 1 shares sent, N - 1 received                                                                         none
          Client-to-server messages per round                                   1 partial sum                                                              1 masked vector
@@ -59,16 +59,16 @@ Same-machine benchmark: N = [2, 4, 8, 16, 32], 50 rounds each ...
 
 === Benchmark (ms per client per round, bytes per client per round) ===
 scheme  clients  client_ms_min  client_ms_max  client_ms_mean  server_ms_mean  bytes_up  bytes_down  setup_ms_per_client
-   v14        2         0.0108         0.0277          0.0126          0.0043  192.0000     96.0000               0.0000
-   v14        4         0.0185         0.0401          0.0203          0.0050  384.0000    288.0000               0.0000
-   v14        8         0.0330         0.0632          0.0354          0.0065  768.0000    672.0000               0.0000
-   v14       16         0.0616         0.1386          0.0724          0.0102 1536.0000   1440.0000               0.0000
-   v14       32         0.3094         0.6082          0.3462          0.0357 3072.0000   2976.0000               0.0000
-   v15        2         0.0338         0.0463          0.0356          0.0046   48.0000      0.0000               0.5942
-   v15        4         0.0949         0.1345          0.0988          0.0054   48.0000      0.0000               1.2017
-   v15        8         0.2165         0.2687          0.2259          0.0072   48.0000      0.0000               2.7512
-   v15       16         0.4595         0.8203          0.5208          0.0121   48.0000      0.0000               6.8413
-   v15       32         3.5122         5.7264          3.8352          0.0495   48.0000      0.0000              42.0940
+   v14        2         0.0089         0.0225          0.0106          0.0036  192.0000     96.0000               0.0000
+   v14        4         0.0152         0.0424          0.0176          0.0048  384.0000    288.0000               0.0000
+   v14        8         0.0266         0.0516          0.0287          0.0058  768.0000    672.0000               0.0000
+   v14       16         0.0455         0.1078          0.0525          0.0072 1536.0000   1440.0000               0.0000
+   v14       32         0.0947         0.3339          0.2195          0.0238 3072.0000   2976.0000               0.0000
+   v15        2         0.0274         0.0460          0.0300          0.0039   48.0000      0.0000               0.4016
+   v15        4         0.0715         0.1765          0.0863          0.0056   48.0000      0.0000               0.9594
+   v15        8         0.1731         0.2158          0.1818          0.0082   48.0000      0.0000               2.4425
+   v15       16         0.3360         0.5413          0.3892          0.0099   48.0000      0.0000               4.7502
+   v15       32         0.7633         3.0107          2.2177          0.0368   48.0000      0.0000               9.9236
 
 === Validation metrics averaged over the rounds (v14, v15, v15 - v14) ===
                                            v14      v15  v15 - v14
@@ -148,7 +148,7 @@ Global Server           Accuracy       0.845794  0.845794   0.000000
                         MCC            0.691969  0.691969   0.000000
                         Cohen's Kappa  0.691211  0.691211   0.000000
 
-max |L_avg(v15) - L_avg(v14)| over the rounds: 1.076e-09
+max |L_glob(v15) - L_glob(v14)| over the rounds: 1.076e-09
 
 Figures (600-dpi PNG + vector PDF):
   saved C:\Users\SURYA\Documents\Bakchudi_Fed\SMPC_Comparison\outputs\figures\fig1_smpc_times.png (+ .pdf)

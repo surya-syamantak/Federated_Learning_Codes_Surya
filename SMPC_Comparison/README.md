@@ -5,7 +5,7 @@
 | Key | Folder | SMPC |
 |---|---|---|
 | v14 | `Fed_Code_v14_ProposedPedersenZKP_SMPC_NoDP` | n-out-of-n additive secret sharing mod 2^127 − 1: each client sends N − 1 shares to the other clients and one partial sum to the server |
-| v15 | `Fed_Code_v15_ProposedPedersenZKP_ProposedSMPC_NoDP` | Adaptive Prime Secure Aggregation with Self-Randomized Pairwise Masking: one-time Diffie–Hellman pairwise keys, prime pool from a public seed, adaptive prime p_t per round, quantization S_q = 10^6, pairwise PRG masks that cancel in the sum; each client sends one masked vector |
+| v15 | `Fed_Code_v15_ProposedPedersenZKP_ProposedSMPC_NoDP` | Adaptive Prime Secure Aggregation with Self-Randomized Pairwise Masking: one-time Diffie–Hellman pairwise keys, prime pool from a public seed, adaptive prime p_r per round, quantization S_quant = 10^6, pairwise PRG masks that cancel in the sum; each client sends one masked vector |
 
 Both protect the same values (each client's weighted validation loss and
 TP/FP/TN/FN counts; the server learns only their totals) in the same place of
@@ -42,7 +42,7 @@ its folder). The benchmark imports each project's own `fedrf_diff/smpc.py`.
    alternated round by round): client and server time, bytes per client, v15's
    key setup. Fair timings, and the scaling with N.
 5. **Metrics**: averaged and last-round metrics of both runs and the
-   per-round difference of `L_avg`.
+   per-round difference of `L_glob`.
 6. **Design properties** side by side (`smpc_properties.csv/.tex`).
 
 ## Outputs (`outputs/`)
@@ -63,7 +63,7 @@ its folder). The benchmark imports each project's own `fedrf_diff/smpc.py`.
 | `fig1_smpc_times` | (a) SMPC time per round per client and Global Server (mean, min..max, log), (b) mean client time per round, (c) one-time key setup |
 | `fig2_smpc_communication` | (a) SMPC bytes up / down per client and round, (b) messages sent / received, (c) modelled SMPC communication time (latency + transmission) |
 | `fig3_smpc_scaling_benchmark` | benchmark vs N: (a) client time (and v15 key setup), (b) client bytes, (c) server time |
-| `fig4_metrics_same_learning` | Global Server metrics (a) averaged and (b) last round for both, (c) per-round difference of `L_avg` |
+| `fig4_metrics_same_learning` | Global Server metrics (a) averaged and (b) last round for both, (c) per-round difference of `L_glob` |
 
 ## Results
 
@@ -94,7 +94,7 @@ Same-machine benchmark (mean ms per client and round; bytes per client and round
 
 Metrics: identical averaged and last-round metrics (Global Server accuracy
 0.844 / 0.846, F1 0.850 / 0.852, MCC 0.689 / 0.692 in both);
-max |L_avg(v15) − L_avg(v14)| = 1.1 × 10⁻⁹ (the two schemes' fixed-point
+max |L_glob(v15) − L_glob(v14)| = 1.1 × 10⁻⁹ (the two schemes' fixed-point
 rounding).
 
 How to read this:

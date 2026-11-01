@@ -69,7 +69,7 @@ def _rounds_axis(ax, rounds):
     step = max(1, int(np.ceil(len(rounds) / 15)))
     ax.set_xticks(rounds[::step])
     ax.set_xlim(rounds[0] - 0.5, rounds[-1] + 0.5)
-    ax.set_xlabel("Communication round t")
+    ax.set_xlabel("Communication round r")
 
 
 def _per_client_lines(ax, df, column, clients):
@@ -86,7 +86,7 @@ def _client_legend(fig, axes):
     fig.legend(handles, labels, loc="lower center", ncols=len(labels), bbox_to_anchor=(0.5, -0.01))
 
 
-# ── Decentralized convergence: G^(t) performance, the three local tests, q_k and the flags ──
+# ── Decentralized convergence: G^(r) performance, the three local tests, q_k and the flags ──
 def _per_client_test(ax, local, column, names, tau):
     rounds = sorted(local["Round"].unique())
     for c, color, mk in zip(names, CLIENT_COLORS, MARKERS):
@@ -112,7 +112,7 @@ def fig_convergence(out_dir, res, cfg, names):
     ax.set_ylabel("Global Server score")
     lo = min(server["Accuracy"].min(), server[MCC].min())
     ax.set_ylim(lo - 0.12, max(server["Accuracy"].max(), server[MCC].max()) + 0.03)
-    ax.set_title("Global model G^(t)", loc="left")
+    ax.set_title("Global model G^(r)", loc="left")
     ax.legend(loc="lower right", ncols=3, fontsize=7)
     _panel(ax, "a")
 
@@ -222,8 +222,8 @@ def fig_communication(out_dir, res, names):
     cost = res.cost
     rounds = sorted(cost["Round"].unique())
     fig, axes = plt.subplots(1, 3, figsize=(10.4, 3.2))
-    for ax, col, title, letter in [(axes[0], "Uplink (KB)", "Uplink: forests F_k^(t-1)", "a"),
-                                   (axes[1], "Downlink (KB)", "Downlink: broadcast of G^(t)", "b")]:
+    for ax, col, title, letter in [(axes[0], "Uplink (KB)", "Uplink: forests F_k^(r-1)", "a"),
+                                   (axes[1], "Downlink (KB)", "Downlink: broadcast of G^(r)", "b")]:
         bottom = np.zeros(len(rounds))
         for c, color in zip(names, CLIENT_COLORS):
             v = cost[cost.Client == c].set_index("Round")[col].reindex(rounds).to_numpy() / 1024
@@ -238,8 +238,8 @@ def fig_communication(out_dir, res, names):
 
     ax = axes[2]
     r = res.rounds
-    ax.plot(r["Round"], r["Candidate Pool |U|"], color=MUTED, lw=2, marker="o", ms=4, label="Candidate pool |U^(t)|")
-    ax.plot(r["Round"], r["Global Trees |G|"], color=GLOBAL_COLOR, lw=2, marker="s", ms=4, label="Global forest |G^(t)|")
+    ax.plot(r["Round"], r["Candidate Pool |U|"], color=MUTED, lw=2, marker="o", ms=4, label="Candidate pool |U^(r)|")
+    ax.plot(r["Round"], r["Global Trees |G|"], color=GLOBAL_COLOR, lw=2, marker="s", ms=4, label="Global forest |G^(r)|")
     _rounds_axis(ax, rounds)
     ax.set_ylim(0, r["Candidate Pool |U|"].max() * 1.2)
     ax.set_ylabel("Trees")
@@ -253,7 +253,7 @@ def fig_communication(out_dir, res, names):
 
 # ── Accuracy vs DP budget ───────────────────────────────────────────────────
 def fig_dp_budget(out_dir, avg, last, names, rounds):
-    """Accuracy of the global model G^(t) under every DP budget."""
+    """Accuracy of the global model G^(r) under every DP budget."""
     out_dir = Path(out_dir)
     parties = names + [SERVER]
     labels = [f"ε = {b}" if b[0].isdigit() else b for b in avg["Epsilon per round"]]
