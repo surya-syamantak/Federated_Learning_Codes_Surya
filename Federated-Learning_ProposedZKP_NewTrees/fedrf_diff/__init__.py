@@ -1,0 +1,20 @@
+"""FedRF-Diff: Federated Random Forest with tree-level aggregation and decentralized convergence.
+
+Four hospitals (horizontal clients) upload only their newly generated trees as explicit decision trees:
+no raw records or latent encodings leave a hospital, the server never averages parameters and
+never sees a validation metric.
+
+    1  Initialisation        F_k^(0) per client, G^(0) empty, q_k = 0                  client.py
+    2  Client upload         proposed ZKP session + new trees N_k^(r-1) + kept ids      client.py, zkp.py
+    3  Tree-level aggregation  validate, repository, G^(r) = SelectTrees(U^(r), A, B)    server.py
+    4  Broadcast             G^(r), round r and the verified schema                     pipeline.py
+    5  Local refinement      F_k^(r) = CapOrPrune(TreePool(G^(r), H_k^(r)), B_k)       client.py, rf_kernel.py
+    6  Local convergence     loss stability, prediction stability, G/F agreement;     convergence.py
+                             only b_k = [q_k >= P] is sent
+    7  Server stopping       all b_k True or t = R_max                                  server.py, pipeline.py
+
+Supporting modules: data.py and alignment.py (hospital split, schema, federated imputation),
+privacy.py (Laplace DP on new leaf vectors), metrics.py, report.py, plotting.py, config.py.
+
+Run:   python -m fedrf_diff
+"""
